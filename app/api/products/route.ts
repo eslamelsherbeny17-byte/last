@@ -27,20 +27,10 @@ export async function GET(req: NextRequest) {
 
     let query: any = {};
 
-    if (search) {
-      // ✨ الخوارزمية السحرية: معالجة (الهمزات، التاء المربوطة، الياء/الألف المقصورة)
-      const arabicRegex = search
-        .replace(/[أإآا]/g, '[أإآا]')
-        .replace(/[ةه]/g, '[ةه]')
-        .replace(/[يى]/g, '[يى]');
-
-      query.$or = [
-        { title: { $regex: arabicRegex, $options: 'i' } },
-        { titleAr: { $regex: arabicRegex, $options: 'i' } },
-        { description: { $regex: arabicRegex, $options: 'i' } },
-        { descriptionAr: { $regex: arabicRegex, $options: 'i' } },
-      ];
-    }
+   // بدلاً من الـ $regex، استخدم $text في الـ query لو عايز نتائج أدق
+if (search) {
+  query.$text = { $search: search }; 
+}
 
     if (category) {
       query.category = category;

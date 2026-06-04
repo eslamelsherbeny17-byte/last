@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap, Gift, BellRing, ChevronDown } from 'lucide-react'
+import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap, Gift, BellRing, ChevronDown, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -39,7 +39,6 @@ export function Navbar() {
   const [isNavLoading, setIsNavLoading] = useState(true)
   const [storeName, setStoreName] = useState('')
   
-  // ✨ حفظ الروابط الأساسية في حالة، والأقسام في حالة تانية للقائمة المنسدلة
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   
@@ -50,7 +49,6 @@ export function Navbar() {
   const wishlistCount = wishlist.length
   const announcementIcons = [Sparkles, Tag, Zap, Gift, BellRing]
 
-  // حركة تبديل الإعلانات
   useEffect(() => {
     if (announcements.length <= 1) return
     const timer = setInterval(() => {
@@ -81,10 +79,9 @@ export function Navbar() {
         const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
         const fetchedCategories = categoriesRes.data?.data || []
         
-        // حفظ الأقسام عشان نعرضها في القائمة المنسدلة (Dropdown)
         setCategories(fetchedCategories)
 
-        // ✨ الروابط النظيفة (الأساسية فقط)
+        // الروابط الأساسية (بنسيب الـ href عشان الموبايل منيو يقرأه عادي)
         const baseLinks = [
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
@@ -185,7 +182,6 @@ export function Navbar() {
               )}
             </Link>
 
-            {/* ✨ الروابط النظيفة في المنتصف مع القائمة المنسدلة */}
             <nav className='hidden lg:flex items-center gap-2 xl:gap-4 flex-1 justify-center'>
               {isLoadingComplete ? (
                 Array.from({ length: 3 }).map((_, i) => (
@@ -193,43 +189,57 @@ export function Navbar() {
                 ))
               ) : (
                 dynamicNavLinks.map((link) => {
-                  const isActive = pathname === link.href || (link.isShop && pathname.startsWith('/product'));
+                  const isActive = pathname === link.href || (link.isShop && (pathname.startsWith('/shop') || pathname.startsWith('/product')));
                   
                   return (
-                    <div key={link.href} className='relative group px-3 py-4'>
-                      <Link href={link.href} className='flex items-center gap-1'>
-                        <motion.span className={cn('text-[14px] xl:text-[16px] font-bold transition-all flex items-center', isActive ? 'text-primary' : 'text-foreground/80 group-hover:text-primary')}>
-                          {link.label}
-                          {link.special && <Zap className='h-4 w-4 mx-1 text-primary fill-primary' />}
-                          {/* السهم الصغير بيظهر جنب كلمة المتجر وبيلف لما الماوس يجي عليه */}
-                          {link.isShop && <ChevronDown className='h-4 w-4 mx-1 opacity-50 group-hover:rotate-180 transition-transform duration-300' />}
-                        </motion.span>
-                      </Link>
+                    <div key={link.label} className='relative group px-3 py-4'>
+                      {/* ✨ لو ده زرار المتجر، نخليه <div> بدل <Link> عشان ميحملش صفحة جديدة لما يتضغط عليه */}
+                      {link.isShop ? (
+                        <div className='flex items-center gap-1 cursor-default'>
+                          <motion.span className={cn('text-[14px] xl:text-[16px] font-bold transition-all flex items-center', isActive ? 'text-primary' : 'text-foreground/80 group-hover:text-primary')}>
+                            {link.label}
+                            <ChevronDown className='h-4 w-4 mx-1 opacity-50 group-hover:rotate-180 transition-transform duration-300' />
+                          </motion.span>
+                        </div>
+                      ) : (
+                        <Link href={link.href} className='flex items-center gap-1'>
+                          <motion.span className={cn('text-[14px] xl:text-[16px] font-bold transition-all flex items-center', isActive ? 'text-primary' : 'text-foreground/80 hover:text-primary', link.special && 'flex items-center gap-1.5')}>
+                            {link.label}
+                            {link.special && <Zap className='h-4 w-4 mx-1 text-primary fill-primary' />}
+                          </motion.span>
+                        </Link>
+                      )}
                       
-                      {/* خط التحديد أسفل الرابط النشط */}
                       {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-lg' />}
                       
-                      {/* ✨ القائمة المنسدلة (Dropdown) تظهر عند الوقوف على المتجر */}
+                      {/* ✨ القائمة المنسدلة: تعرض 5 أقسام فقط + زرار عرض الكل */}
                       {link.isShop && categories.length > 0 && (
                         <div className={cn(
-                          'absolute top-full mt-0 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50',
+                          'absolute top-full mt-0 w-60 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50',
                           isRTL ? 'right-0' : 'left-0'
                         )}>
                           <div className='bg-background border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl p-2 flex flex-col'>
-                            <Link href="/shop" className='px-4 py-2.5 text-sm font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900/50 text-gray-900 dark:text-gray-100 transition-colors mb-1'>
-                              {language === 'ar' ? 'كل المنتجات' : 'All Products'}
-                            </Link>
-                            <div className='h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-1'></div>
                             
-                            {categories.map((cat) => (
+                            {categories.slice(0, 5).map((cat) => (
                               <Link 
                                 key={cat._id} 
                                 href={`/shop?category=${cat.slug || cat._id}`} 
-                                className='px-4 py-2 text-sm font-medium rounded-xl hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors'
+                                className='px-4 py-2.5 text-sm font-medium rounded-xl hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors'
                               >
                                 {cat.name}
                               </Link>
                             ))}
+
+                            <div className='h-px bg-gray-100 dark:bg-gray-800 mx-2 my-1'></div>
+                            
+                            <Link 
+                              href="/shop" 
+                              className='px-4 py-3 text-sm font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900/50 text-primary transition-colors flex items-center justify-between group/btn'
+                            >
+                              {language === 'ar' ? 'عرض كل الأقسام' : 'View All Categories'}
+                              <ArrowRight className={cn("h-4 w-4 transition-transform group-hover/btn:translate-x-1", isRTL && "rotate-180 group-hover/btn:-translate-x-1")} />
+                            </Link>
+
                           </div>
                         </div>
                       )}

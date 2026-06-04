@@ -31,19 +31,22 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
   const inputRef = useRef<HTMLInputElement>(null)
 
   // ✨ معالجة البحث بدون تقطيع
-  useEffect(() => {
+ useEffect(() => {
     let isMounted = true;
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     
+    // 1. هنا الإضافة اللي كنت بتسأل عليها (الخروج المبكر)
     if (!searchQuery.trim()) {
-      setSearchResults([])
-      setIsSearching(false)
-      return
+      setSearchResults([]);
+      setIsSearching(false);
+      return; 
     }
 
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    
     setIsSearching(true)
     setShowResults(true)
     
+    // 2. تأخير الريكويست
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const response = await productsAPI.getAll({ keyword: searchQuery.trim(), limit: 6 })
@@ -52,10 +55,8 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
         let productsArray: Product[] = []
         if (response && Array.isArray(response.data)) {
             productsArray = response.data
-        } else if (response && response.data && Array.isArray((response.data as any).data)) {
-            productsArray = (response.data as any).data
-        } else if (Array.isArray(response)) {
-            productsArray = response
+        } else if (response && (response as any).data && Array.isArray((response as any).data.data)) {
+            productsArray = (response as any).data.data
         }
         
         setSearchResults(productsArray)
@@ -65,14 +66,13 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
       } finally {
         if (isMounted) setIsSearching(false)
       }
-    }, 300) // تأخير ذكي عشان مش كل حرف يبعت ريكويست للسيرفر
+    }, 300)
     
     return () => { 
       isMounted = false;
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) 
     }
   }, [searchQuery])
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {

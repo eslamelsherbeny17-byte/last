@@ -112,5 +112,7 @@ productSchema.pre('save', function () {
       .replace(/-+/g, '-');
   }
 });
+// أضف هذا السطر بعد تعريف productSchema وقبل الـ export
+productSchema.index({ title: 'text', titleAr: 'text', description: 'text' });
 
 export default mongoose.models.Product || mongoose.model<IProduct>('Product', productSchema);
