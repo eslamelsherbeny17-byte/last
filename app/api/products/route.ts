@@ -10,61 +10,29 @@ import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-
-    // 💡 استخدام nextUrl يضمن قراءة الكلمات العربية بدون مشاكل
     const searchParams = req.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    
-    // استخراج كلمة البحث
     const search = searchParams.get('keyword') || searchParams.get('search') || '';
-    
-    const category = searchParams.get('category');
-    const brand = searchParams.get('brand');
-    const sort = searchParams.get('sort') || '-createdAt';
-
-    const skip = (page - 1) * limit;
 
     let query: any = {};
-
-   // بدلاً من الـ $regex، استخدم $text في الـ query لو عايز نتائج أدق
-if (search) {
-  query.$text = { $search: search }; 
-}
-
-    if (category) {
-      query.category = category;
+    if (search) {
+      // ✨ DEBUGGING: هنطبع الكلمة اللي السيرفر بيستقبلها
+      console.log("Searching for:", search); 
+      
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { titleAr: { $regex: search, $options: 'i' } }
+      ];
     }
 
-    if (brand) {
-      query.brand = brand;
-    }
+    const products = await Product.find(query);
+    
+    // ✨ DEBUGGING: هنطبع عدد المنتجات اللي لقاها
+    console.log("Products found in DB:", products.length);
 
-    const products = await Product.find(query)
-      .populate('category')
-      .populate('brand')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-
-    const total = await Product.countDocuments(query);
-
-    return NextResponse.json(
-      {
-        results: total,
-        data: products,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit),
-        },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ data: products }, { status: 200 });
   } catch (error) {
-    console.error('Products list error:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error('API Error:', error); // ده هيظهر في كونسل السيرفر (الـ Terminal)
+    return NextResponse.json({ message: 'Error' }, { status: 500 });
   }
 }
 export async function POST(req: NextRequest) {
