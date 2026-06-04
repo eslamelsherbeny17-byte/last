@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
-import Cart from '@/lib/models/Cart';
 import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
 import '@/lib/models/Product';
 import '@/lib/models/User';
 
-// 1. جلب تفاصيل الطلب (GET)
+// 1. جلب تفاصيل الطلب لليوزر والأدمن (GET)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = getTokenFromRequest(req);
@@ -23,6 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     if (!order) return NextResponse.json({ message: 'Order not found' }, { status: 404 });
 
+    // حماية: اليوزر يشوف طلبه فقط، والأدمن يشوف أي طلب
     if (decoded.role !== 'admin' && order.user._id.toString() !== decoded.userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
@@ -76,53 +76,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ message: 'Order updated successfully', data: order }, { status: 200 });
   } catch (error) {
     console.error('Order update error:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// 3. إنشاء طلب جديد باستخدام ID السلة (POST) 👇 الدالة اللي كانت ناقصة
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const token = getTokenFromRequest(req);
-    if (!token) return NextResponse.json({ message: 'No token provided' }, { status: 401 });
-
-    const decoded = verifyToken(token);
-    if (!decoded) return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-
-    await dbConnect();
-
-    const body = await req.json();
-    const { shippingAddress, paymentMethodType = 'cash' } = body;
-
-    // params.id هنا هو رقم السلة (Cart ID) اللي الفرونت إند بيبعته
-    const cart = await Cart.findById(params.id);
-
-    if (!cart || cart.cartItems.length === 0) {
-      return NextResponse.json({ message: 'Cart is empty' }, { status: 400 });
-    }
-
-    const order = new Order({
-      user: decoded.userId,
-      cartItems: cart.cartItems,
-      totalOrderPrice: cart.totalCartPrice,
-      shippingAddress,
-      paymentMethodType,
-      status: 'pending',
-    });
-
-    await order.save();
-    await order.populate('cartItems.product');
-
-    // تفريغ السلة بعد إتمام الطلب بنجاح
-    await Cart.findByIdAndUpdate(params.id, { 
-      cartItems: [], 
-      totalCartPrice: 0, 
-      totalPriceAfterDiscount: 0 
-    });
-
-    return NextResponse.json({ message: 'Order created successfully', data: order }, { status: 201 });
-  } catch (error) {
-    console.error('Order creation error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

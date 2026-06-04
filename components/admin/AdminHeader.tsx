@@ -124,11 +124,13 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             <Menu className='h-5 w-5' />
           </Button>
 
-          {/* Site Name (Mobile Only) */}
+          {/* Site Name (Mobile Only) - ✨ تم التعديل هنا وإضافة رابط للصفحة الرئيسية للأدمن */}
           <div className='flex items-center gap-2 lg:hidden'>
-            <h1 className='text-base sm:text-lg font-black bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent'>
-              لوحة التحكم
-            </h1>
+            <Link href="/admin" className="hover:opacity-80 transition-opacity">
+              <h1 className='text-base sm:text-lg font-black bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent'>
+                لوحة التحكم
+              </h1>
+            </Link>
           </div>
         </div>
 
@@ -148,7 +150,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             {theme === 'dark' ? <Sun className='h-5 w-5' /> : <Moon className='h-5 w-5' />}
           </Button>
 
-          {/* ✨ قائمة الإشعارات الذكية للموبايل */}
+          {/* قائمة الإشعارات الذكية للموبايل */}
           <DropdownMenu onOpenChange={(open) => { if (open) markAsRead() }}>
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' size='icon' className='relative h-10 w-10 flex-shrink-0 rounded-xl'>
@@ -160,7 +162,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            {/* تم حل مشكلة عرض الشاشة وعشوائية الموضع هنا من خلال التنسيقات أدناه */}
             <DropdownMenuContent 
               align='end' 
               sideOffset={8} 
@@ -211,7 +212,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* ✨ قائمة ملف المسؤول - مؤمنة بالكامل للموبايل */}
+          {/* قائمة ملف المسؤول */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' className='gap-2 px-1.5 sm:px-3 h-10 rounded-xl hover:bg-accent'>
