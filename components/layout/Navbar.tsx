@@ -82,9 +82,11 @@ export function Navbar() {
         setCategories(fetchedCategories)
 
         // الروابط الأساسية
-        const baseLinks = [
+       const baseLinks = [
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
+          // ✨ ضفنا الرابط ده (بيودي لصفحة المتجر مع ترتيب الأكثر مبيعاً)
+          { href: '/shop?sort=bestsellers', label: language === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers' }, 
           { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
         ]
 

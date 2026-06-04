@@ -7,32 +7,107 @@ import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
 import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 
 
+import { NextRequest, NextResponse } from 'next/server';
+import dbConnect from '@/lib/db';
+import Product from '@/lib/models/Product';
+import Category from '@/lib/models/Category';
+import Brand from '@/lib/models/Brand';
+import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
+import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
+
+// ✨ السطر ده بيمنع الكاش تماماً عشان البحث والفلتر يشتغلوا لحظياً
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
     const searchParams = req.nextUrl.searchParams;
+
+    // 1. إعدادات الصفحات (Pagination)
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '12'); // 12 منتج عشان يملوا الشبكة (Grid) بشكل متناسق
+    const skip = (page - 1) * limit;
+
+    // 2. استخراج المتغيرات من الرابط
     const search = searchParams.get('keyword') || searchParams.get('search') || '';
+    const categories = searchParams.getAll('category');
+    const brands = searchParams.getAll('brand');
+    
+    // الفرونت إند بيبعت السعر بالشكل ده price[gte] و price[lte]
+    const priceGte = searchParams.get('price[gte]'); 
+    const priceLte = searchParams.get('price[lte]');
+    const isDiscounted = searchParams.get('isDiscounted');
+    const sort = searchParams.get('sort') || '-createdAt';
 
     let query: any = {};
+
+    // --- أ. فلتر البحث الذكي (يدعم الهمزات والتاء المربوطة) ---
     if (search) {
-      // ✨ DEBUGGING: هنطبع الكلمة اللي السيرفر بيستقبلها
-      console.log("Searching for:", search); 
-      
+      const arabicRegex = search
+        .replace(/[أإآا]/g, '[أإآا]')
+        .replace(/[ةه]/g, '[ةه]')
+        .replace(/[يى]/g, '[يى]');
+
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { titleAr: { $regex: search, $options: 'i' } }
+        { title: { $regex: arabicRegex, $options: 'i' } },
+        { titleAr: { $regex: arabicRegex, $options: 'i' } },
+        { description: { $regex: arabicRegex, $options: 'i' } },
+        { descriptionAr: { $regex: arabicRegex, $options: 'i' } }
       ];
     }
 
-    const products = await Product.find(query);
-    
-    // ✨ DEBUGGING: هنطبع عدد المنتجات اللي لقاها
-    console.log("Products found in DB:", products.length);
+    // --- ب. فلتر الأقسام (Categories) ---
+    if (categories.length > 0 && categories[0] !== 'all' && categories[0] !== '') {
+      // معالجة لو الأقسام مبعوتة كمصفوفة أو نص مفصول بفاصلة
+      const catArray = categories[0].includes(',') ? categories[0].split(',') : categories;
+      query.category = { $in: catArray };
+    }
 
-    return NextResponse.json({ data: products }, { status: 200 });
+    // --- ج. فلتر الماركات (Brands) ---
+    if (brands.length > 0 && brands[0] !== 'all' && brands[0] !== '') {
+      const brandArray = brands[0].includes(',') ? brands[0].split(',') : brands;
+      query.brand = { $in: brandArray };
+    }
+
+    // --- د. فلتر السعر (Price Range) ---
+    if (priceGte || priceLte) {
+      query.price = {};
+      if (priceGte) query.price.$gte = Number(priceGte);
+      if (priceLte) query.price.$lte = Number(priceLte);
+    }
+
+    // --- هـ. فلتر التخفيضات (Sale) ---
+    if (isDiscounted === 'true') {
+      // لو المنتج عليه خصم، لازم يكون حقل السعر بعد الخصم موجود وأكبر من صفر
+      query.priceAfterDiscount = { $exists: true, $gt: 0 };
+    }
+
+    // 3. جلب البيانات من الداتا بيز
+    const products = await Product.find(query)
+      .populate('category')
+      .populate('brand')
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
+
+    // 4. جلب العدد الكلي عشان الـ Pagination في الفرونت إند يشتغل
+    const total = await Product.countDocuments(query);
+
+    return NextResponse.json(
+      {
+        results: total,
+        paginationResult: {
+          currentPage: page,
+          limit,
+          numberOfPages: Math.ceil(total / limit),
+        },
+        data: products,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('API Error:', error); // ده هيظهر في كونسل السيرفر (الـ Terminal)
-    return NextResponse.json({ message: 'Error' }, { status: 500 });
+    console.error('Products fetch error:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 export async function POST(req: NextRequest) {
