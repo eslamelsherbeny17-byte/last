@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Settings from '@/lib/models/Settings';
-// import { verifyAdmin } from '@/lib/auth'; // فك الكومنت لو عندك دالة للتحقق من الأدمن
+import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
+
+// ✨ منع الكاش نهائياً عشان التعديلات تظهر فوراً
+export const dynamic = 'force-dynamic';
 
 // جلب الإعدادات (GET)
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-
-    // البحث عن أول ملف إعدادات (لأنه يوجد ملف واحد فقط)
     let settings = await Settings.findOne();
 
-    // لو المتجر لسه جديد ومفيش إعدادات، هنكريت إعدادات افتراضية
     if (!settings) {
       settings = await Settings.create({});
     }
@@ -26,20 +26,24 @@ export async function GET(req: NextRequest) {
 // تحديث الإعدادات (PUT)
 export async function PUT(req: NextRequest) {
   try {
+    const token = getTokenFromRequest(req);
+    if (!token) return NextResponse.json({ message: 'No token provided' }, { status: 401 });
+
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.role !== 'admin') {
+      return NextResponse.json({ message: 'Admin access required' }, { status: 403 });
+    }
+
     await dbConnect();
-
-    // 🔴 هنا يجب التأكد أن من يقوم بالتعديل هو (أدمن) فقط
-    // const isAdmin = await verifyAdmin(req);
-    // if (!isAdmin) return NextResponse.json({ message: 'غير مصرح لك' }, { status: 403 });
-
     const body = await req.json();
 
-    // استخدام findOneAndUpdate بدون فلتر {} عشان نعدل على الملف الوحيد الموجود
-    // upsert: true تعني لو الملف مش موجود، كريته
+    // 🛑 التعديل السحري: استبعاد الـ _id وأي بيانات ممنوع تتعدل عشان المونجو يقبل الحفظ
+    const { _id, createdAt, updatedAt, __v, ...updateData } = body;
+
     const updatedSettings = await Settings.findOneAndUpdate(
       {}, 
-      { $set: body },
-      { new: true, upsert: true }
+      { $set: updateData },
+      { new: true, upsert: true, runValidators: true }
     );
 
     return NextResponse.json({ 

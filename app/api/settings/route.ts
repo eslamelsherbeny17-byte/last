@@ -3,7 +3,9 @@ import dbConnect from '@/lib/db';
 import Setting from '@/lib/models/Settings';
 import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
 
-// جلب الإعدادات
+// ✨ منع الكاش نهائياً هنا كمان
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     await dbConnect();
@@ -20,7 +22,6 @@ export async function GET() {
   }
 }
 
-// تحديث الإعدادات
 export async function PUT(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
@@ -34,7 +35,6 @@ export async function PUT(req: NextRequest) {
     await dbConnect();
     const body = await req.json();
 
-    // 🛑 التعديل السحري: استبعاد الـ _id وأي بيانات ممنوع تتعدل
     const { _id, createdAt, updatedAt, __v, ...updateData } = body;
 
     const settings = await Setting.findOneAndUpdate(
