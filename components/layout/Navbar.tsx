@@ -54,10 +54,8 @@ export function Navbar() {
        const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
         const fetchedCategories = categoriesRes.data?.data || []
 
-        // 🌟 التعديل هنا: هناخد أول 4 أقسام فقط عشان الناف بار ميبقاش زحمة
         const topCategories = fetchedCategories.slice(0, 4)
 
-        // بناء الروابط
         const baseLinks = [
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop' },
@@ -159,7 +157,6 @@ export function Navbar() {
             </nav>
 
             <div className='flex items-center gap-1 lg:gap-2'>
-              {/* إزالة زرار اللغة والإبقاء على زر المظهر فقط */}
               <div className='hidden lg:flex items-center gap-1'><ThemeToggle /></div>
 
               <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
@@ -171,14 +168,14 @@ export function Navbar() {
                 {isAuthenticated ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild><Button variant='ghost' size='icon' className='rounded-full'><Avatar className='h-9 w-9'><AvatarFallback className='bg-primary/15 text-primary font-bold'>{getUserInitials(user?.name)}</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align='end' className='w-56'>
+                    {/* ✨ التعديل هنا: إضافة z-[100] و sideOffset */}
+                    <DropdownMenuContent align='end' sideOffset={8} className='w-56 z-[100]'>
                       <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => router.push('/profile')}><UserCircle className='mr-2 h-4 w-4' />{t('profile')}</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => router.push('/profile/orders')}><Package className='mr-2 h-4 w-4' />{t('orders')}</DropdownMenuItem>
                       {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className='text-primary'><Crown className='mr-2 h-4 w-4' />{t('adminPanel')}</DropdownMenuItem>}
                       <DropdownMenuSeparator />
-                      {/* حل مشكلة TypeScript هنا */}
                       <DropdownMenuItem onClick={() => logout()} className='text-red-600'><LogOut className='mr-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

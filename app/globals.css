@@ -54,6 +54,7 @@
   body {
     @apply bg-background text-foreground transition-colors duration-300;
     font-family: var(--font-cairo), var(--font-inter), sans-serif;
+    overflow-x: hidden; /* ✨ السطر ده سحري بيمنع الصفحة إنها تروح يمين وشمال على الموبايل */
   }
   [dir='rtl'] { direction: rtl; }
   [dir='ltr'] { direction: ltr; }

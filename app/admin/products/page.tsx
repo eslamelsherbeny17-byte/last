@@ -350,7 +350,7 @@ export default function ProductsPage() {
                               <MoreVertical className='h-4 w-4' />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align='end' className='bg-card border shadow-lg'>
+                          <DropdownMenuContent align='end' sideOffset={8} className='bg-card border shadow-lg z-[100]'>
                             <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
@@ -441,7 +441,8 @@ export default function ProductsPage() {
                             <MoreVertical className='h-4 w-4' />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end' className='bg-card'>
+                        {/* ✨ التعديل هنا: إضافة z-[100] و sideOffset لحل مشكلة الموبايل */}
+                        <DropdownMenuContent align='end' sideOffset={8} className='bg-card z-[100] w-48'>
                           <DropdownMenuItem asChild>
                             <Link href={`/product/${product._id}`}>
                               <Eye className='ml-2 h-4 w-4' />
