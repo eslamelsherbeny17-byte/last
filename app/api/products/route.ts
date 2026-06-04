@@ -11,12 +11,12 @@ export async function GET(req: NextRequest) {
   try {
     await dbConnect();
 
-    // ✨ استخدمنا req.nextUrl عشان نضمن إن الداتا تتقري 100% بدون أخطاء
+    // 💡 استخدام nextUrl يضمن قراءة الكلمات العربية بدون مشاكل
     const searchParams = req.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     
-    // سحب الكلمة المكتوبة في السيرش
+    // استخراج كلمة البحث
     const search = searchParams.get('keyword') || searchParams.get('search') || '';
     
     const category = searchParams.get('category');
@@ -28,11 +28,17 @@ export async function GET(req: NextRequest) {
     let query: any = {};
 
     if (search) {
+      // ✨ الخوارزمية السحرية: معالجة (الهمزات، التاء المربوطة، الياء/الألف المقصورة)
+      const arabicRegex = search
+        .replace(/[أإآا]/g, '[أإآا]')
+        .replace(/[ةه]/g, '[ةه]')
+        .replace(/[يى]/g, '[يى]');
+
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { titleAr: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { descriptionAr: { $regex: search, $options: 'i' } },
+        { title: { $regex: arabicRegex, $options: 'i' } },
+        { titleAr: { $regex: arabicRegex, $options: 'i' } },
+        { description: { $regex: arabicRegex, $options: 'i' } },
+        { descriptionAr: { $regex: arabicRegex, $options: 'i' } },
       ];
     }
 
