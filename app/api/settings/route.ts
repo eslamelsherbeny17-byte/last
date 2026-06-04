@@ -7,10 +7,8 @@ import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
 export async function GET() {
   try {
     await dbConnect();
-    // بنجيب أول مستند لأن الإعدادات هي مستند واحد فقط
     let settings = await Setting.findOne();
     
-    // لو مفيش إعدادات، ننشئ واحدة بالقيم الافتراضية
     if (!settings) {
       settings = await Setting.create({});
     }
@@ -22,7 +20,6 @@ export async function GET() {
   }
 }
 
-// تحديث الإعدادات
 // تحديث الإعدادات
 export async function PUT(req: NextRequest) {
   try {
@@ -37,10 +34,12 @@ export async function PUT(req: NextRequest) {
     await dbConnect();
     const body = await req.json();
 
-    // استخدمنا new: true بدل returnDocument
+    // 🛑 التعديل السحري: استبعاد الـ _id وأي بيانات ممنوع تتعدل
+    const { _id, createdAt, updatedAt, __v, ...updateData } = body;
+
     const settings = await Setting.findOneAndUpdate(
       {}, 
-      { $set: body },
+      { $set: updateData },
       { new: true, upsert: true, runValidators: true }
     );
 

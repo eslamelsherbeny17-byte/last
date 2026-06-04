@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap } from 'lucide-react'
+import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap, Gift, BellRing } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -36,28 +36,31 @@ export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   
-  // دمجنا حالة التحميل عشان كله يظهر مع بعضه
+  // حالة التحميل الشاملة
   const [isNavLoading, setIsNavLoading] = useState(true)
 
   // إعدادات المتجر الديناميكية
   const [storeName, setStoreName] = useState('')
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
   
-  // نصوص الشريط العلوي الديناميكية
-  const [topBarText1, setTopBarText1] = useState('شحن مجاني للطلبات فوق 500 جنيه')
-  const [topBarText2, setTopBarText2] = useState('خصم 20% على جميع المنتجات')
+  // ✨ الإعلانات الديناميكية كمصفوفة لتقبل أي عدد
+  const [announcements, setAnnouncements] = useState<string[]>([])
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0)
 
   const isAdmin = user?.role === 'admin'
   const wishlistCount = wishlist.length
 
-  // حركة تبديل النصوص في الشريط العلوي
+  // أيقونات متحركة للإعلانات
+  const announcementIcons = [Sparkles, Tag, Zap, Gift, BellRing]
+
+  // حركة تبديل الإعلانات
   useEffect(() => {
+    if (announcements.length <= 1) return // لو إعلان واحد مش محتاجين نبدل
     const timer = setInterval(() => {
-      setCurrentAnnouncement((prev) => (prev === 0 ? 1 : 0))
+      setCurrentAnnouncement((prev) => (prev + 1) % announcements.length)
     }, 4000)
     return () => clearInterval(timer)
-  }, [])
+  }, [announcements.length])
 
   useEffect(() => {
     const fetchDynamicData = async () => {
@@ -68,10 +71,15 @@ export function Navbar() {
         
         if (data) {
           setStoreName(data.siteName || t('brandName'))
-          if (data.announcement1) setTopBarText1(data.announcement1)
-          if (data.announcement2) setTopBarText2(data.announcement2)
+          // ✨ جلب مصفوفة الإعلانات
+          if (data.announcements && data.announcements.length > 0) {
+            setAnnouncements(data.announcements)
+          } else {
+            setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
+          }
         } else {
           setStoreName(t('brandName'))
+          setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
         }
 
        const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
@@ -99,6 +107,7 @@ export function Navbar() {
       } catch (error) {
         console.error("Error fetching dynamic nav data", error)
         setStoreName(t('brandName'))
+        setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
         setDynamicNavLinks([
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop' },
@@ -142,37 +151,34 @@ export function Navbar() {
     else router.push(route)
   }
 
-  const announcements = [
-    { text: topBarText1, icon: Sparkles },
-    { text: topBarText2, icon: Tag }
-  ]
-
-  // ندمج حالة تحميل الـ Auth مع حالة الـ Nav عشان نضمن إن الداتا كلها ظهرت
+  // ندمج حالة تحميل الـ Auth مع حالة الـ Nav عشان نضمن إن الداتا كلها ظهرت مع بعض
   const isLoadingComplete = isNavLoading || authLoading
 
   return (
     <>
       <header className={cn('relative md:sticky top-0 z-50 w-full transition-all duration-300', isScrolled ? 'shadow-md' : 'shadow-sm')}>
         
-        {/* الشريط العلوي */}
-        <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary h-7 sm:h-8 flex items-center justify-center'>
-          <AnimatePresence mode='wait'>
-            <motion.div
-              key={currentAnnouncement}
-              initial={{ y: 15, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -15, opacity: 0 }}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
-              className='absolute flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-white tracking-wide'
-            >
-              {(() => {
-                const Icon = announcements[currentAnnouncement].icon
-                return <Icon className='h-3 w-3 sm:h-3.5 sm:w-3.5 text-yellow-300' />
-              })()}
-              <span>{announcements[currentAnnouncement].text}</span>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        {/* ✨ الشريط العلوي (يظهر فقط إذا كان هناك إعلانات) */}
+        {announcements.length > 0 && announcements[0] !== '' && (
+          <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary h-7 sm:h-8 flex items-center justify-center'>
+            <AnimatePresence mode='wait'>
+              <motion.div
+                key={currentAnnouncement}
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -15, opacity: 0 }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
+                className='absolute flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-white tracking-wide'
+              >
+                {(() => {
+                  const CurrentIcon = announcementIcons[currentAnnouncement % announcementIcons.length]
+                  return <CurrentIcon className='h-3 w-3 sm:h-3.5 sm:w-3.5 text-yellow-300' />
+                })()}
+                <span>{announcements[currentAnnouncement]}</span>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
 
         <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
           <div className='container mx-auto px-3 sm:px-4 flex h-14 sm:h-16 items-center justify-between'>
@@ -216,7 +222,7 @@ export function Navbar() {
               )}
             </nav>
 
-            {/* ✨ الأيقونات (السلة، المفضلة، المستخدم، البحث) كلها بتعمل لودينج مع بعض */}
+            {/* الأيقونات كلها بتعمل لودينج مع بعض */}
             {isLoadingComplete ? (
               <div className='flex items-center gap-2 sm:gap-3 flex-shrink-0'>
                 <div className="hidden lg:block h-8 w-8 bg-muted/50 animate-pulse rounded-full"></div>

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { productsAPI } from '@/lib/api'
 import type { Product } from '@/lib/types'
-import { cn } from '@/lib/utils'
+// ✨ التعديل: استدعينا getImageUrl عشان الصور تظهر دايماً سليمة
+import { cn, getImageUrl } from '@/lib/utils'
 
 interface NavSearchProps {
   isMobile?: boolean
@@ -93,7 +94,7 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
   const SearchResultsList = () => (
     <>
       {searchResults.length > 0 && searchQuery && (
-        <div className={cn('mt-3 pt-3 border-t max-h-80 overflow-y-auto', isMobile ? 'bg-card rounded-xl border max-h-60' : '')}>
+        <div className={cn('mt-3 pt-3 border-t max-h-80 overflow-y-auto scrollbar-thin', isMobile ? 'bg-card rounded-xl border max-h-60' : '')}>
           {searchResults.map((product) => (
             <button
               key={product._id}
@@ -104,13 +105,20 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
                 setSearchQuery('')
                 if (setIsOpen) setIsOpen(false)
               }}
-              className='w-full flex items-center gap-3 p-3 hover:bg-muted/80 rounded-xl transition-colors'
+              className='w-full flex items-center gap-3 p-3 hover:bg-muted/80 rounded-xl transition-colors text-right'
             >
               <div className='relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0'>
-                <Image src={product.imageCover || '/placeholder.svg'} alt={product.title} fill className='object-cover' />
+                {/* ✨ التعديل هنا لضمان عمل الصور بشكل سليم */}
+                <Image 
+                  src={product.imageCover ? getImageUrl(product.imageCover) : '/placeholder.svg'} 
+                  alt={product.title} 
+                  fill 
+                  sizes="48px"
+                  className='object-cover' 
+                />
               </div>
               <div className={cn('flex-1 min-w-0', isRTL ? 'text-right' : 'text-left')}>
-                <p className='font-medium text-sm line-clamp-1'>{product.title}</p>
+                <p className='font-medium text-sm line-clamp-1'>{isRTL ? (product.titleAr || product.title) : product.title}</p>
                 <p className='text-xs text-muted-foreground'>
                   {product.price} {language === 'ar' ? 'جنيه' : 'EGP'}
                 </p>
@@ -133,7 +141,7 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
                   router.push(`/shop?search=${term}`)
                   setShowResults(false)
                 }}
-                className='text-xs px-3 py-1.5 rounded-full bg-primary/15 hover:bg-primary/25 font-medium text-primary'
+                className='text-xs px-3 py-1.5 rounded-full bg-primary/15 hover:bg-primary/25 font-medium text-primary transition-colors'
               >
                 {term}
               </button>

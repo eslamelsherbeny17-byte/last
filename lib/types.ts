@@ -4,8 +4,10 @@
 export interface Product {
   _id: string
   title: string
+  titleAr?: string // ✨ ضفنا دي عشان السيرش باللغة العربية
   slug: string
   description: string
+  descriptionAr?: string // ✨ وضفنا دي كمان بالمرة
   quantity: number
   titleEn?: string;     
   descriptionEn?: string;

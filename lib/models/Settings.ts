@@ -8,15 +8,17 @@ const settingsSchema = new mongoose.Schema(
     phone: { type: String, default: '' },
     address: { type: String, default: '' },
     
-    // 🌟 روابط السوشيال ميديا 
+    // روابط السوشيال ميديا 
     facebook: { type: String, default: '' },
     instagram: { type: String, default: '' },
     twitter: { type: String, default: '' },
     whatsapp: { type: String, default: '' },
 
-    // ✨ نصوص الشريط العلوي (الإعلانات)
-    announcement1: { type: String, default: 'شحن مجاني للطلبات فوق 500 جنيه' },
-    announcement2: { type: String, default: 'خصم 20% على جميع المنتجات' },
+    // ✨ قائمة الإعلانات (لإضافة أي عدد تريده)
+    announcements: { 
+      type: [String], 
+      default: ['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'] 
+    },
 
     freeShippingThreshold: { type: Number, default: 0 },
     shippingCost: { type: Number, default: 0 },

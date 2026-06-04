@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, Loader2, Facebook, Instagram, Twitter, MessageCircle } from 'lucide-react'
+import { Save, Loader2, Facebook, Instagram, Twitter, MessageCircle, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,9 +20,8 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState({
     siteName: '',
     siteDescription: '',
-    // ✨ حقول الشريط العلوي
-    announcement1: '',
-    announcement2: '',
+    // ✨ تم تحويل الإعلانات إلى مصفوفة (Array) لتقبل أي عدد
+    announcements: [''], 
     email: '',
     phone: '',
     address: '',
@@ -49,7 +48,12 @@ export default function SettingsPage() {
       setLoading(true)
       const response = await adminSettingsAPI.get()
       if (response.data) {
-        setSettings({ ...settings, ...response.data })
+        setSettings({ 
+          ...settings, 
+          ...response.data,
+          // التأكد من جلب مصفوفة الإعلانات أو وضع قيمة افتراضية لو فارغة
+          announcements: response.data.announcements?.length > 0 ? response.data.announcements : ['شحن مجاني للطلبات فوق 500 جنيه']
+        })
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error)
@@ -61,7 +65,17 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      await adminSettingsAPI.update(settings)
+      // ✨ تنظيف الإعلانات الفارغة قبل إرسالها لقاعدة البيانات
+      const cleanedSettings = {
+        ...settings,
+        announcements: settings.announcements.filter(a => a.trim() !== '')
+      }
+      
+      await adminSettingsAPI.update(cleanedSettings)
+      
+      // تحديث الحالة بالقيم المنظفة عشان اليوزر يشوفها
+      setSettings(cleanedSettings.announcements.length > 0 ? cleanedSettings : { ...cleanedSettings, announcements: [''] })
+      
       toast({ title: '✅ تم الحفظ', description: 'تم حفظ الإعدادات بنجاح' })
     } catch (error) {
       toast({ title: '❌ خطأ', description: 'فشل حفظ الإعدادات', variant: 'destructive' })
@@ -117,21 +131,46 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* ✨ إعدادات الشريط العلوي */}
+          {/* ✨ إعدادات الشريط العلوي الديناميكية */}
           <Card className='border-0 shadow-sm'>
             <CardHeader>
               <CardTitle className='text-base sm:text-lg'>شريط الإعلانات العلوي (Top Bar)</CardTitle>
-              <CardDescription className='text-xs sm:text-sm'>النصوص التي تظهر وتتحرك في أعلى الموقع (الناف بار)</CardDescription>
+              <CardDescription className='text-xs sm:text-sm'>يمكنك إضافة أي عدد من الإعلانات لتتحرك في أعلى الموقع</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='announcement1' className='text-sm font-semibold'>الإعلان الأول</Label>
-                <Input id='announcement1' placeholder='مثال: شحن مجاني للطلبات فوق 500 جنيه' value={settings.announcement1} onChange={(e) => setSettings({ ...settings, announcement1: e.target.value })} className='h-10 sm:h-11' />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='announcement2' className='text-sm font-semibold'>الإعلان الثاني</Label>
-                <Input id='announcement2' placeholder='مثال: خصم 20% بمناسبة الافتتاح' value={settings.announcement2} onChange={(e) => setSettings({ ...settings, announcement2: e.target.value })} className='h-10 sm:h-11' />
-              </div>
+            <CardContent className='space-y-3'>
+              {settings.announcements.map((announcement, index) => (
+                <div key={index} className='flex items-center gap-2'>
+                  <Input 
+                    value={announcement} 
+                    onChange={(e) => {
+                      const newAnns = [...settings.announcements];
+                      newAnns[index] = e.target.value;
+                      setSettings({ ...settings, announcements: newAnns });
+                    }} 
+                    placeholder={`الإعلان رقم ${index + 1}`} 
+                    className='h-10 sm:h-11' 
+                  />
+                  <Button 
+                    variant='destructive' 
+                    size='icon'
+                    className='h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0'
+                    onClick={() => {
+                      const newAnns = settings.announcements.filter((_, i) => i !== index);
+                      setSettings({ ...settings, announcements: newAnns });
+                    }}
+                    disabled={settings.announcements.length === 1} // منع مسح آخر حقل
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button 
+                variant='outline' 
+                onClick={() => setSettings({ ...settings, announcements: [...settings.announcements, ''] })}
+                className="w-full border-dashed mt-2 h-10"
+              >
+                <Plus className="h-4 w-4 ml-2" /> إضافة إعلان جديد
+              </Button>
             </CardContent>
           </Card>
 
