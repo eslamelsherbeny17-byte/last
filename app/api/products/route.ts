@@ -11,16 +11,17 @@ export async function GET(req: NextRequest) {
   try {
     await dbConnect();
 
-    const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '10');
+    // ✨ استخدمنا req.nextUrl عشان نضمن إن الداتا تتقري 100% بدون أخطاء
+    const searchParams = req.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
     
-    // ✨ التعديل هنا: خلينا الباك إند يستقبل keyword أو search عشان يشتغل مع أي شاشة
-    const search = url.searchParams.get('keyword') || url.searchParams.get('search') || '';
+    // سحب الكلمة المكتوبة في السيرش
+    const search = searchParams.get('keyword') || searchParams.get('search') || '';
     
-    const category = url.searchParams.get('category');
-    const brand = url.searchParams.get('brand');
-    const sort = url.searchParams.get('sort') || '-createdAt';
+    const category = searchParams.get('category');
+    const brand = searchParams.get('brand');
+    const sort = searchParams.get('sort') || '-createdAt';
 
     const skip = (page - 1) * limit;
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
         { title: { $regex: search, $options: 'i' } },
         { titleAr: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { descriptionAr: { $regex: search, $options: 'i' } }, // ✨ ضفنا الوصف العربي بالمرة
+        { descriptionAr: { $regex: search, $options: 'i' } },
       ];
     }
 
