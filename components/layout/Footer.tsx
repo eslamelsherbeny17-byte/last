@@ -44,7 +44,8 @@ export function Footer() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/settings`)
+        // ✨ التعديل هنا: غيرنا الرابط لـ /settings عشان يقرا الداتا الصح
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/settings`)
         if (res.data?.data) {
           setStoreSettings(res.data.data)
         }
