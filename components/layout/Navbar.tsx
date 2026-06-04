@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, MapPin, Crown, LogOut, Sparkles, Tag, Zap } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -26,7 +26,7 @@ import { MobileMenu } from './MobileMenu'
 export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, logout, isAuthenticated } = useAuth()
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth()
   const { itemsCount } = useCart()
   const { wishlist } = useWishlist()
   const { language, t, isRTL } = useLanguage()
@@ -35,24 +35,43 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
-
-  // ✨ تم إضافة حالة التحميل الخاصة بالناف بار
+  
+  // دمجنا حالة التحميل عشان كله يظهر مع بعضه
   const [isNavLoading, setIsNavLoading] = useState(true)
-  const [storeName, setStoreName] = useState('') // خليناها فاضية في البداية عشان مفيش اسم وهمي يظهر
+
+  // إعدادات المتجر الديناميكية
+  const [storeName, setStoreName] = useState('')
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
+  
+  // نصوص الشريط العلوي الديناميكية
+  const [topBarText1, setTopBarText1] = useState('شحن مجاني للطلبات فوق 500 جنيه')
+  const [topBarText2, setTopBarText2] = useState('خصم 20% على جميع المنتجات')
+  const [currentAnnouncement, setCurrentAnnouncement] = useState(0)
 
   const isAdmin = user?.role === 'admin'
   const wishlistCount = wishlist.length
 
+  // حركة تبديل النصوص في الشريط العلوي
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentAnnouncement((prev) => (prev === 0 ? 1 : 0))
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [])
+
   useEffect(() => {
     const fetchDynamicData = async () => {
       try {
-        setIsNavLoading(true) // بدأ التحميل
+        setIsNavLoading(true)
         const settingsRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/settings`)
-        if (settingsRes.data?.data?.siteName) {
-          setStoreName(settingsRes.data.data.siteName)
+        const data = settingsRes.data?.data
+        
+        if (data) {
+          setStoreName(data.siteName || t('brandName'))
+          if (data.announcement1) setTopBarText1(data.announcement1)
+          if (data.announcement2) setTopBarText2(data.announcement2)
         } else {
-          setStoreName(t('brandName')) // لو مفيش اسم في الداتابيز، نستخدم الافتراضي
+          setStoreName(t('brandName'))
         }
 
        const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
@@ -86,7 +105,7 @@ export function Navbar() {
           { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
         ])
       } finally {
-        setIsNavLoading(false) // إنهاء التحميل
+        setIsNavLoading(false)
       }
     }
     fetchDynamicData()
@@ -123,39 +142,61 @@ export function Navbar() {
     else router.push(route)
   }
 
+  const announcements = [
+    { text: topBarText1, icon: Sparkles },
+    { text: topBarText2, icon: Tag }
+  ]
+
+  // ندمج حالة تحميل الـ Auth مع حالة الـ Nav عشان نضمن إن الداتا كلها ظهرت
+  const isLoadingComplete = isNavLoading || authLoading
+
   return (
     <>
       <header className={cn('relative md:sticky top-0 z-50 w-full transition-all duration-300', isScrolled ? 'shadow-md' : 'shadow-sm')}>
-        <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary'>
-          <div className='container mx-auto px-4 py-1.5 relative text-center text-[10px] sm:text-xs font-semibold text-white flex justify-center gap-4'>
-            <span className='flex items-center gap-1'><Sparkles className='h-3 w-3' />{t('freeShipping')}</span>
-            <span className='opacity-50'>•</span>
-            <span className='flex items-center gap-1'><Tag className='h-3 w-3' />{t('discount')}</span>
-          </div>
+        
+        {/* الشريط العلوي */}
+        <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary h-7 sm:h-8 flex items-center justify-center'>
+          <AnimatePresence mode='wait'>
+            <motion.div
+              key={currentAnnouncement}
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -15, opacity: 0 }}
+              transition={{ duration: 0.4, ease: 'easeInOut' }}
+              className='absolute flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-white tracking-wide'
+            >
+              {(() => {
+                const Icon = announcements[currentAnnouncement].icon
+                return <Icon className='h-3 w-3 sm:h-3.5 sm:w-3.5 text-yellow-300' />
+              })()}
+              <span>{announcements[currentAnnouncement].text}</span>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
-          <div className='container mx-auto px-4 flex h-16 items-center justify-between'>
-            <div className='lg:hidden w-10'>
+          <div className='container mx-auto px-3 sm:px-4 flex h-14 sm:h-16 items-center justify-between'>
+            
+            <div className='lg:hidden w-10 flex-shrink-0'>
               <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)}>
-                <Menu className='h-5 w-5' />
+                <Menu className='h-5 w-5 sm:h-6 sm:w-6' />
               </Button>
             </div>
 
+            {/* اللوجو */}
             <Link href='/' className='flex-1 lg:flex-none flex justify-center lg:justify-start px-2'>
-              {/* ✨ السكيليتون لاسم المتجر (علامة التحميل) */}
-              {isNavLoading ? (
-                <div className="h-8 sm:h-10 w-32 sm:w-48 bg-muted/60 animate-pulse rounded-lg"></div>
+              {isLoadingComplete ? (
+                <div className="h-6 sm:h-8 w-24 sm:w-32 bg-muted/60 animate-pulse rounded-lg"></div>
               ) : (
-                <span className='text-xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
+                <span className='text-lg sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
                   {storeName}
                 </span>
               )}
             </Link>
 
-            <nav className='hidden lg:flex items-center gap-2 flex-1 justify-center'>
-              {/* ✨ السكيليتون لروابط الناف بار */}
-              {isNavLoading ? (
+            {/* الروابط في المنتصف */}
+            <nav className='hidden lg:flex items-center gap-1 xl:gap-2 flex-1 justify-center'>
+              {isLoadingComplete ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="h-6 w-16 bg-muted/50 animate-pulse rounded-md mx-2"></div>
                 ))
@@ -163,10 +204,10 @@ export function Navbar() {
                 dynamicNavLinks.map((link) => {
                   const isActive = pathname === link.href
                   return (
-                    <Link key={link.href} href={link.href} className='relative group px-5 py-2'>
-                      <motion.span className={cn('text-[16px] font-bold transition-all', isActive ? 'text-primary' : 'text-foreground/80 hover:text-primary', link.special && 'flex items-center gap-2')}>
+                    <Link key={link.href} href={link.href} className='relative group px-3 xl:px-5 py-2'>
+                      <motion.span className={cn('text-[14px] xl:text-[16px] font-bold transition-all', isActive ? 'text-primary' : 'text-foreground/80 hover:text-primary', link.special && 'flex items-center gap-1.5')}>
                         {link.label}
-                        {link.special && <Zap className='h-4 w-4 text-primary fill-primary' />}
+                        {link.special && <Zap className='h-3.5 w-3.5 text-primary fill-primary' />}
                       </motion.span>
                       {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-full' />}
                     </Link>
@@ -175,46 +216,56 @@ export function Navbar() {
               )}
             </nav>
 
-            <div className='flex items-center gap-1 lg:gap-2'>
-              <div className='hidden lg:flex items-center gap-1'><ThemeToggle /></div>
+            {/* ✨ الأيقونات (السلة، المفضلة، المستخدم، البحث) كلها بتعمل لودينج مع بعض */}
+            {isLoadingComplete ? (
+              <div className='flex items-center gap-2 sm:gap-3 flex-shrink-0'>
+                <div className="hidden lg:block h-8 w-8 bg-muted/50 animate-pulse rounded-full"></div>
+                <div className="h-8 w-8 sm:h-9 sm:w-9 bg-muted/50 animate-pulse rounded-full"></div>
+                <div className="h-8 w-8 sm:h-9 sm:w-9 bg-muted/50 animate-pulse rounded-full"></div>
+                <div className="h-8 w-8 sm:h-9 sm:w-9 bg-muted/50 animate-pulse rounded-full"></div>
+              </div>
+            ) : (
+              <div className='flex items-center gap-0.5 sm:gap-1 lg:gap-2 flex-shrink-0'>
+                <div className='hidden lg:flex items-center gap-1'><ThemeToggle /></div>
 
-              <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
-              <Button variant='ghost' size='icon' className='md:hidden' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
-                <Search className='h-5 w-5' />
-              </Button>
+                <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
+                <Button variant='ghost' size='icon' className='md:hidden h-9 w-9' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
+                  <Search className='h-4 w-4 sm:h-5 sm:w-5' />
+                </Button>
 
-              <div className='hidden sm:block'>
-                {isAuthenticated ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button variant='ghost' size='icon' className='rounded-full'><Avatar className='h-9 w-9'><AvatarFallback className='bg-primary/15 text-primary font-bold'>{getUserInitials(user?.name)}</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align='end' sideOffset={8} className='w-56 z-[100]'>
-                      <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => router.push('/profile')}><UserCircle className='mr-2 h-4 w-4' />{t('profile')}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push('/profile/orders')}><Package className='mr-2 h-4 w-4' />{t('orders')}</DropdownMenuItem>
-                      {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className='text-primary'><Crown className='mr-2 h-4 w-4' />{t('adminPanel')}</DropdownMenuItem>}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => logout()} className='text-red-600'><LogOut className='mr-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Link href='/login'><Button variant='ghost' size='icon'><User className='h-5 w-5' /></Button></Link>
+                <div className='hidden sm:block'>
+                  {isAuthenticated ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant='ghost' size='icon' className='rounded-full'><Avatar className='h-8 w-8 sm:h-9 sm:w-9'><AvatarFallback className='bg-primary/15 text-primary font-bold'>{getUserInitials(user?.name)}</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
+                      <DropdownMenuContent align='end' sideOffset={8} className='w-56 z-[100]'>
+                        <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => router.push('/profile')}><UserCircle className='mr-2 h-4 w-4' />{t('profile')}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/profile/orders')}><Package className='mr-2 h-4 w-4' />{t('orders')}</DropdownMenuItem>
+                        {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className='text-primary'><Crown className='mr-2 h-4 w-4' />{t('adminPanel')}</DropdownMenuItem>}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => logout()} className='text-red-600'><LogOut className='mr-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Link href='/login'><Button variant='ghost' size='icon'><User className='h-5 w-5' /></Button></Link>
+                  )}
+                </div>
+
+                {!isAdmin && (
+                  <>
+                    <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10'>
+                      <Heart className={cn('h-4 w-4 sm:h-5 sm:w-5', isAuthenticated && wishlistCount > 0 && 'fill-pink-500 text-pink-500')} />
+                      {isAuthenticated && wishlistCount > 0 && <Badge className='absolute -top-1 -right-1 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-pink-500 text-white flex items-center justify-center rounded-full text-[8px] sm:text-[9px]'>{wishlistCount}</Badge>}
+                    </Button>
+                    <Button onClick={handleOpenProtected('cart')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10'>
+                      <ShoppingCart className='h-4 w-4 sm:h-5 sm:w-5' />
+                      {isAuthenticated && itemsCount > 0 && <Badge className='absolute -top-1 -right-1 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-primary text-primary-foreground flex items-center justify-center rounded-full text-[8px] sm:text-[9px] font-bold'>{itemsCount}</Badge>}
+                    </Button>
+                  </>
                 )}
               </div>
-
-              {!isAdmin && (
-                <>
-                  <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='relative'>
-                    <Heart className={cn('h-5 w-5', isAuthenticated && wishlistCount > 0 && 'fill-pink-500 text-pink-500')} />
-                    {isAuthenticated && wishlistCount > 0 && <Badge className='absolute -top-1 -right-1 h-4 w-4 p-0 bg-pink-500 text-white flex items-center justify-center rounded-full text-[9px]'>{wishlistCount}</Badge>}
-                  </Button>
-                  <Button onClick={handleOpenProtected('cart')} variant='ghost' size='icon' className='relative'>
-                    <ShoppingCart className='h-5 w-5' />
-                    {isAuthenticated && itemsCount > 0 && <Badge className='absolute -top-1 -right-1 h-4 w-4 p-0 bg-primary text-primary-foreground flex items-center justify-center rounded-full text-[9px] font-bold'>{itemsCount}</Badge>}
-                  </Button>
-                </>
-              )}
-            </div>
+            )}
           </div>
         </div>
 

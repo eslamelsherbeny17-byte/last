@@ -1,4 +1,3 @@
-// lib/models/Settings.ts
 import mongoose from 'mongoose';
 
 const settingsSchema = new mongoose.Schema(
@@ -9,11 +8,15 @@ const settingsSchema = new mongoose.Schema(
     phone: { type: String, default: '' },
     address: { type: String, default: '' },
     
-    // 🌟 روابط السوشيال ميديا (استخدم الأسماء دي بس)
+    // 🌟 روابط السوشيال ميديا 
     facebook: { type: String, default: '' },
     instagram: { type: String, default: '' },
     twitter: { type: String, default: '' },
     whatsapp: { type: String, default: '' },
+
+    // ✨ نصوص الشريط العلوي (الإعلانات)
+    announcement1: { type: String, default: 'شحن مجاني للطلبات فوق 500 جنيه' },
+    announcement2: { type: String, default: 'خصم 20% على جميع المنتجات' },
 
     freeShippingThreshold: { type: Number, default: 0 },
     shippingCost: { type: Number, default: 0 },

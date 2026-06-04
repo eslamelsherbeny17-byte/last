@@ -20,6 +20,9 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState({
     siteName: '',
     siteDescription: '',
+    // ✨ حقول الشريط العلوي
+    announcement1: '',
+    announcement2: '',
     email: '',
     phone: '',
     address: '',
@@ -31,8 +34,7 @@ export default function SettingsPage() {
     emailNotifications: true,
     smsNotifications: false,
     acceptCashOnDelivery: true,
-    // 👈 ضفنا روابط السوشيال ميديا هنا
-   facebook: '',
+    facebook: '',
     instagram: '',
     twitter: '',
     whatsapp: '',
@@ -91,7 +93,7 @@ export default function SettingsPage() {
       <Tabs defaultValue='general' className='space-y-4 sm:space-y-6'>
         <TabsList className='grid w-full grid-cols-3 sm:grid-cols-5 h-auto'>
           <TabsTrigger value='general' className='text-xs sm:text-sm'>عام</TabsTrigger>
-          <TabsTrigger value='social' className='text-xs sm:text-sm'>التواصل</TabsTrigger> {/* 👈 تاب السوشيال */}
+          <TabsTrigger value='social' className='text-xs sm:text-sm'>التواصل</TabsTrigger>
           <TabsTrigger value='shipping' className='text-xs sm:text-sm'>الشحن</TabsTrigger>
           <TabsTrigger value='notifications' className='text-xs sm:text-sm'>الإشعارات</TabsTrigger>
           <TabsTrigger value='advanced' className='text-xs sm:text-sm'>متقدم</TabsTrigger>
@@ -112,6 +114,32 @@ export default function SettingsPage() {
                 <Label htmlFor='siteDescription' className='text-sm font-semibold'>وصف المتجر</Label>
                 <Textarea id='siteDescription' value={settings.siteDescription} onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })} className='min-h-[80px] resize-none' />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* ✨ إعدادات الشريط العلوي */}
+          <Card className='border-0 shadow-sm'>
+            <CardHeader>
+              <CardTitle className='text-base sm:text-lg'>شريط الإعلانات العلوي (Top Bar)</CardTitle>
+              <CardDescription className='text-xs sm:text-sm'>النصوص التي تظهر وتتحرك في أعلى الموقع (الناف بار)</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='space-y-2'>
+                <Label htmlFor='announcement1' className='text-sm font-semibold'>الإعلان الأول</Label>
+                <Input id='announcement1' placeholder='مثال: شحن مجاني للطلبات فوق 500 جنيه' value={settings.announcement1} onChange={(e) => setSettings({ ...settings, announcement1: e.target.value })} className='h-10 sm:h-11' />
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='announcement2' className='text-sm font-semibold'>الإعلان الثاني</Label>
+                <Input id='announcement2' placeholder='مثال: خصم 20% بمناسبة الافتتاح' value={settings.announcement2} onChange={(e) => setSettings({ ...settings, announcement2: e.target.value })} className='h-10 sm:h-11' />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className='border-0 shadow-sm'>
+            <CardHeader>
+              <CardTitle className='text-base sm:text-lg'>بيانات التواصل</CardTitle>
+            </CardHeader>
+            <CardContent className='space-y-4'>
               <div className='grid sm:grid-cols-2 gap-4'>
                 <div className='space-y-2'>
                   <Label htmlFor='email' className='text-sm font-semibold'>البريد الإلكتروني</Label>
@@ -130,7 +158,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* 2. Social Media Settings 👈 (تم إضافة هذا القسم) */}
+        {/* 2. Social Media Settings */}
         <TabsContent value='social' className='space-y-4 sm:space-y-6'>
           <Card className='border-0 shadow-sm'>
             <CardHeader>
