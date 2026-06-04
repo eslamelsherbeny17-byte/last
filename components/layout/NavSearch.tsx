@@ -26,15 +26,45 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
   const [isSearching, setIsSearching] = useState(false)
   const [showResults, setShowResults] = useState(false)
   
+  // حالة الكلمات المتغيرة في البحث
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  
   const searchTimeoutRef = useRef<NodeJS.Timeout>()
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // ✨ معالجة البحث بدون تقطيع
- useEffect(() => {
+  // ✨ عبارات عامة تناسب أي نوع متجر
+  const placeholdersAr = [
+    'بتدور على إيه؟...', 
+    'ابحث عن منتجاتك المفضلة...', 
+    'اكتشف أحدث العروض...', 
+    'اكتب اسم المنتج هنا...',
+    'تسوق بكل سهولة...'
+  ]
+  const placeholdersEn = [
+    'What are you looking for?...', 
+    'Search for your favorite products...', 
+    'Discover the latest offers...', 
+    'Type the product name here...',
+    'Shop with ease...'
+  ]
+  const currentPlaceholders = language === 'ar' ? placeholdersAr : placeholdersEn
+
+  // تأثير تغيير النص كل 3 ثواني
+  useEffect(() => {
+    if (searchQuery) return 
+    
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % currentPlaceholders.length)
+    }, 3000)
+    
+    return () => clearInterval(interval)
+  }, [searchQuery, currentPlaceholders.length])
+
+  // معالجة البحث بدون تقطيع
+  useEffect(() => {
     let isMounted = true;
     
-    // 1. هنا الإضافة اللي كنت بتسأل عليها (الخروج المبكر)
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsSearching(false);
@@ -46,7 +76,6 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
     setIsSearching(true)
     setShowResults(true)
     
-    // 2. تأخير الريكويست
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const response = await productsAPI.getAll({ keyword: searchQuery.trim(), limit: 6 })
@@ -73,6 +102,7 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) 
     }
   }, [searchQuery])
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -102,21 +132,20 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
     if (inputRef.current) inputRef.current.focus()
   }
 
-  // ✨ تم تحويل العناصر لـ Variables عشان React ميمسحش المربع أثناء الكتابة
   const SearchInputJSX = (
     <form onSubmit={handleSearch} className="relative flex items-center w-full">
       <Search className={cn('absolute h-4 w-4 text-gray-400 z-10 transition-colors', isSearching && 'text-primary', isRTL ? 'right-3.5' : 'left-3.5')} />
       <Input
         ref={inputRef}
         type='text'
-        placeholder={t('search') + '...'}
+        placeholder={currentPlaceholders[placeholderIndex]}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onFocus={() => setShowResults(true)}
         className={cn(
-          'h-10 w-full rounded-full border-transparent bg-gray-100 dark:bg-gray-800/80 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all shadow-none',
+          'h-10 w-full rounded-full border-transparent bg-gray-100 dark:bg-gray-800/80 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all shadow-none placeholder:transition-opacity duration-500',
           isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10',
-          !isMobile && 'md:w-[200px] lg:w-[280px] xl:w-[340px]' // حجم ثابت في الديسكتوب
+          !isMobile && 'md:w-[260px] lg:w-[320px] xl:w-[380px]'
         )}
         autoComplete="off"
       />
@@ -134,7 +163,7 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
 
   const SearchResultsJSX = (
     <div className="flex flex-col w-full">
-      {/* 1. السكيليتون (شكل التحميل) */}
+      {/* السكيليتون (شكل التحميل) */}
       {isSearching && searchQuery && (
         <div className="py-4 px-2 space-y-3">
           {[1, 2, 3].map((i) => (
@@ -149,7 +178,7 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
         </div>
       )}
 
-      {/* 2. عرض النتائج */}
+      {/* عرض النتائج */}
       {!isSearching && searchResults.length > 0 && searchQuery && (
         <div className="py-2 max-h-[60vh] md:max-h-[350px] overflow-y-auto scrollbar-thin">
           <div className="px-4 pb-2 text-[11px] font-bold text-gray-400 uppercase">
@@ -198,7 +227,7 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
         </div>
       )}
 
-      {/* 3. لا توجد نتائج */}
+      {/* لا توجد نتائج */}
       {!isSearching && searchResults.length === 0 && searchQuery && (
         <div className="py-10 px-4 flex flex-col items-center text-center">
           <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 text-gray-400">
@@ -213,14 +242,14 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
         </div>
       )}
 
-      {/* 4. البحث السريع (يظهر قبل الكتابة) */}
+      {/* ✨ البحث السريع (بكلمات تسويقية عامة تناسب أي متجر) */}
       {!searchQuery && (
         <div className='p-4'>
           <p className='text-[11px] font-bold text-gray-400 uppercase mb-3'>
             {language === 'ar' ? 'الأكثر بحثاً' : 'Popular Searches'}
           </p>
           <div className='flex flex-wrap gap-2'>
-            {(language === 'ar' ? ['عباءات', 'حجاب', 'تخفيضات'] : ['Abayas', 'Hijabs', 'Sale']).map((term) => (
+            {(language === 'ar' ? ['تخفيضات', 'وصل حديثاً', 'الأكثر مبيعاً', 'عروض حصرية'] : ['Sale', 'New Arrivals', 'Best Sellers', 'Exclusive']).map((term) => (
               <button key={term} type='button' onClick={() => executeSearch(term)} className='text-xs px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary font-medium transition-colors'>
                 {term}
               </button>
@@ -231,7 +260,6 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
     </div>
   )
 
-  // عرض الموبايل (نافذة منسدلة)
   if (isMobile) {
     return (
       <AnimatePresence>
@@ -249,7 +277,6 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
     )
   }
 
-  // عرض الكمبيوتر (مربع بحث دائم الظهور)
   return (
     <>
       <AnimatePresence>

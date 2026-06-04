@@ -81,11 +81,10 @@ export function Navbar() {
         
         setCategories(fetchedCategories)
 
-        // الروابط الأساسية
-       const baseLinks = [
+        // الروابط الأساسية الأربعة
+        const baseLinks = [
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
-          // ✨ ضفنا الرابط ده (بيودي لصفحة المتجر مع ترتيب الأكثر مبيعاً)
           { href: '/shop?sort=bestsellers', label: language === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers' }, 
           { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
         ]
@@ -98,6 +97,7 @@ export function Navbar() {
         setDynamicNavLinks([
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
+          { href: '/shop?sort=bestsellers', label: language === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers' },
           { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
         ])
       } finally {
@@ -167,32 +167,31 @@ export function Navbar() {
         )}
 
         <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
-          {/* ✨ التوزيعة الاحترافية الجديدة: flex و w-full لتوزيع المساحات بذكاء */}
-          <div className='container mx-auto px-4 lg:px-8 flex h-16 sm:h-20 items-center w-full'>
+          <div className='container mx-auto px-2 sm:px-4 lg:px-8 flex h-14 sm:h-16 lg:h-20 items-center w-full'>
             
-            {/* 1. عمود اللوجو والموبايل (flex-1 يضمن أخذ مساحة متساوية مع اليسار لتوسيط المنتصف) */}
-            <div className='flex flex-1 items-center justify-start gap-3'>
+            {/* 1. عمود اللوجو والموبايل */}
+            <div className='flex flex-1 items-center justify-start gap-1 sm:gap-3'>
               <div className='lg:hidden'>
-                <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-ml-2'>
-                  <Menu className='h-6 w-6 text-foreground/80' />
+                <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-ml-1 sm:-ml-2 h-9 w-9 sm:h-10 sm:w-10'>
+                  <Menu className='h-5 w-5 sm:h-6 sm:w-6 text-foreground/80' />
                 </Button>
               </div>
 
               <Link href='/' className='flex-shrink-0'>
                 {isLoadingComplete ? (
-                  <div className="h-8 w-28 bg-muted/60 animate-pulse rounded-lg"></div>
+                  <div className="h-6 sm:h-8 w-20 sm:w-28 bg-muted/60 animate-pulse rounded-lg"></div>
                 ) : (
-                  <span className='text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
+                  <span className='text-xl sm:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
                     {storeName}
                   </span>
                 )}
               </Link>
             </div>
 
-            {/* 2. عمود الروابط (shrink-0 يضمن عدم تداخلها، وهي تتوسط الشاشة تماماً) */}
-            <nav className='hidden lg:flex shrink-0 items-center justify-center gap-10'>
+            {/* 2. عمود الروابط */}
+            <nav className='hidden lg:flex shrink-0 items-center justify-center gap-6 xl:gap-8'>
               {isLoadingComplete ? (
-                Array.from({ length: 3 }).map((_, i) => (
+                Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="h-5 w-16 bg-muted/50 animate-pulse rounded-md"></div>
                 ))
               ) : (
@@ -203,24 +202,22 @@ export function Navbar() {
                     <div key={link.label} className='relative group py-6'>
                       {link.isShop ? (
                         <div className='flex items-center cursor-default'>
-                          <motion.span className={cn('text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 hover:text-primary')}>
+                          <motion.span className={cn('text-[14px] xl:text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 group-hover:text-primary')}>
                             {link.label}
                             <ChevronDown className='h-4 w-4 mx-1 opacity-50 group-hover:rotate-180 transition-transform duration-300' />
                           </motion.span>
                         </div>
                       ) : (
                         <Link href={link.href} className='flex items-center'>
-                          <motion.span className={cn('text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 hover:text-primary', link.special && 'text-primary')}>
+                          <motion.span className={cn('text-[14px] xl:text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 hover:text-primary', link.special && 'text-primary')}>
                             {link.label}
                             {link.special && <Zap className='h-4 w-4 mx-1 fill-primary' />}
                           </motion.span>
                         </Link>
                       )}
                       
-                      {/* خط الأكتيف الناعم */}
                       {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-lg' />}
                       
-                      {/* القائمة المنسدلة (Dropdown) بتصميم نظيف */}
                       {link.isShop && categories.length > 0 && (
                         <div className={cn(
                           'absolute top-full mt-0 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50',
@@ -253,13 +250,13 @@ export function Navbar() {
               )}
             </nav>
 
-            {/* 3. عمود الأيقونات وأدوات المستخدم (flex-1 عشان يوازي عمود اللوجو ويطرد العناصر لليسار) */}
-            <div className='flex flex-1 items-center justify-end gap-1 sm:gap-3'>
+            {/* 3. عمود الأيقونات وأدوات المستخدم */}
+            <div className='flex flex-1 items-center justify-end gap-0.5 sm:gap-2 lg:gap-3'>
               {isLoadingComplete ? (
-                <div className='flex items-center gap-2'>
+                <div className='flex items-center gap-1 sm:gap-2'>
                   <div className="hidden lg:block h-10 w-10 bg-muted/50 animate-pulse rounded-full"></div>
-                  <div className="h-9 w-9 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
-                  <div className="h-9 w-9 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
+                  <div className="h-8 w-8 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
+                  <div className="h-8 w-8 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
                 </div>
               ) : (
                 <>
@@ -267,7 +264,7 @@ export function Navbar() {
 
                   {/* البحث */}
                   <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
-                  <Button variant='ghost' size='icon' className='md:hidden h-10 w-10 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
+                  <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
                     <Search className='h-5 w-5 text-foreground/80' />
                   </Button>
 
@@ -305,19 +302,19 @@ export function Navbar() {
 
                   {/* المفضلة والسلة */}
                   {!isAdmin && (
-                    <div className="flex items-center gap-1">
-                      <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='relative h-10 w-10 rounded-full hover:bg-muted'>
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                      <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
                         <Heart className={cn('h-5 w-5 transition-colors', isAuthenticated && wishlistCount > 0 ? 'fill-red-500 text-red-500' : 'text-foreground/80')} />
                         {isAuthenticated && wishlistCount > 0 && (
-                          <Badge className='absolute top-1.5 right-1.5 h-4 w-4 p-0 bg-red-500 hover:bg-red-600 text-white flex items-center justify-center rounded-full text-[9px] border-2 border-background'>
+                          <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-red-500 hover:bg-red-600 text-white flex items-center justify-center rounded-full text-[8px] sm:text-[9px] border-2 border-background'>
                             {wishlistCount}
                           </Badge>
                         )}
                       </Button>
-                      <Button onClick={handleOpenProtected('cart')} variant='ghost' size='icon' className='relative h-10 w-10 rounded-full hover:bg-muted'>
+                      <Button onClick={handleOpenProtected('cart')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
                         <ShoppingCart className='h-5 w-5 text-foreground/80' />
                         {isAuthenticated && itemsCount > 0 && (
-                          <Badge className='absolute top-1.5 right-1.5 h-4 w-4 p-0 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center rounded-full text-[9px] font-bold border-2 border-background'>
+                          <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center rounded-full text-[8px] sm:text-[9px] font-bold border-2 border-background'>
                             {itemsCount}
                           </Badge>
                         )}

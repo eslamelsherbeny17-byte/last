@@ -7,15 +7,7 @@ import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
 import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 
 
-import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import Product from '@/lib/models/Product';
-import Category from '@/lib/models/Category';
-import Brand from '@/lib/models/Brand';
-import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
-import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 
-// ✨ السطر ده بيمنع الكاش تماماً عشان البحث والفلتر يشتغلوا لحظياً
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
