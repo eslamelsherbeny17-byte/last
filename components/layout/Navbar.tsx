@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap, Gift, BellRing } from 'lucide-react'
+import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap, Gift, BellRing, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -36,26 +36,23 @@ export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   
-  // حالة التحميل الشاملة
   const [isNavLoading, setIsNavLoading] = useState(true)
-
-  // إعدادات المتجر الديناميكية
   const [storeName, setStoreName] = useState('')
-  const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
   
-  // ✨ الإعلانات الديناميكية كمصفوفة لتقبل أي عدد
+  // ✨ حفظ الروابط الأساسية في حالة، والأقسام في حالة تانية للقائمة المنسدلة
+  const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  
   const [announcements, setAnnouncements] = useState<string[]>([])
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0)
 
   const isAdmin = user?.role === 'admin'
   const wishlistCount = wishlist.length
-
-  // أيقونات متحركة للإعلانات
   const announcementIcons = [Sparkles, Tag, Zap, Gift, BellRing]
 
   // حركة تبديل الإعلانات
   useEffect(() => {
-    if (announcements.length <= 1) return // لو إعلان واحد مش محتاجين نبدل
+    if (announcements.length <= 1) return
     const timer = setInterval(() => {
       setCurrentAnnouncement((prev) => (prev + 1) % announcements.length)
     }, 4000)
@@ -66,13 +63,11 @@ export function Navbar() {
     const fetchDynamicData = async () => {
       try {
         setIsNavLoading(true)
-        // ✨ التعديل هنا: تم تغيير الرابط إلى /settings
         const settingsRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/settings`)
         const data = settingsRes.data?.data
         
         if (data) {
           setStoreName(data.siteName || t('brandName'))
-          // ✨ جلب مصفوفة الإعلانات
           if (data.announcements && data.announcements.length > 0) {
             setAnnouncements(data.announcements)
           } else {
@@ -83,35 +78,27 @@ export function Navbar() {
           setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
         }
 
-       const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
+        const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
         const fetchedCategories = categoriesRes.data?.data || []
+        
+        // حفظ الأقسام عشان نعرضها في القائمة المنسدلة (Dropdown)
+        setCategories(fetchedCategories)
 
-        const topCategories = fetchedCategories.slice(0, 4)
-
+        // ✨ الروابط النظيفة (الأساسية فقط)
         const baseLinks = [
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
-          { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop' },
+          { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
+          { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
         ]
-        
-        const categoryLinks = topCategories.map((cat: any) => ({
-          href: `/shop?category=${cat.slug || cat._id}`,
-          label: cat.name,
-        }))
 
-        const saleLink = { 
-          href: '/shop?sale=true', 
-          label: language === 'ar' ? 'التخفيضات' : 'Sale', 
-          special: true 
-        }
-
-        setDynamicNavLinks([...baseLinks, ...categoryLinks, saleLink])
+        setDynamicNavLinks(baseLinks)
       } catch (error) {
         console.error("Error fetching dynamic nav data", error)
         setStoreName(t('brandName'))
         setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
         setDynamicNavLinks([
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
-          { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop' },
+          { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
           { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
         ])
       } finally {
@@ -152,14 +139,12 @@ export function Navbar() {
     else router.push(route)
   }
 
-  // ندمج حالة تحميل الـ Auth مع حالة الـ Nav عشان نضمن إن الداتا كلها ظهرت مع بعض
   const isLoadingComplete = isNavLoading || authLoading
 
   return (
     <>
       <header className={cn('relative md:sticky top-0 z-50 w-full transition-all duration-300', isScrolled ? 'shadow-md' : 'shadow-sm')}>
         
-        {/* ✨ الشريط العلوي (يظهر فقط إذا كان هناك إعلانات) */}
         {announcements.length > 0 && announcements[0] !== '' && (
           <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary h-7 sm:h-8 flex items-center justify-center'>
             <AnimatePresence mode='wait'>
@@ -190,7 +175,6 @@ export function Navbar() {
               </Button>
             </div>
 
-            {/* اللوجو */}
             <Link href='/' className='flex-1 lg:flex-none flex justify-center lg:justify-start px-2'>
               {isLoadingComplete ? (
                 <div className="h-6 sm:h-8 w-24 sm:w-32 bg-muted/60 animate-pulse rounded-lg"></div>
@@ -201,29 +185,61 @@ export function Navbar() {
               )}
             </Link>
 
-            {/* الروابط في المنتصف */}
-            <nav className='hidden lg:flex items-center gap-1 xl:gap-2 flex-1 justify-center'>
+            {/* ✨ الروابط النظيفة في المنتصف مع القائمة المنسدلة */}
+            <nav className='hidden lg:flex items-center gap-2 xl:gap-4 flex-1 justify-center'>
               {isLoadingComplete ? (
-                Array.from({ length: 4 }).map((_, i) => (
+                Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="h-6 w-16 bg-muted/50 animate-pulse rounded-md mx-2"></div>
                 ))
               ) : (
                 dynamicNavLinks.map((link) => {
-                  const isActive = pathname === link.href
+                  const isActive = pathname === link.href || (link.isShop && pathname.startsWith('/product'));
+                  
                   return (
-                    <Link key={link.href} href={link.href} className='relative group px-3 xl:px-5 py-2'>
-                      <motion.span className={cn('text-[14px] xl:text-[16px] font-bold transition-all', isActive ? 'text-primary' : 'text-foreground/80 hover:text-primary', link.special && 'flex items-center gap-1.5')}>
-                        {link.label}
-                        {link.special && <Zap className='h-3.5 w-3.5 text-primary fill-primary' />}
-                      </motion.span>
-                      {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-full' />}
-                    </Link>
+                    <div key={link.href} className='relative group px-3 py-4'>
+                      <Link href={link.href} className='flex items-center gap-1'>
+                        <motion.span className={cn('text-[14px] xl:text-[16px] font-bold transition-all flex items-center', isActive ? 'text-primary' : 'text-foreground/80 group-hover:text-primary')}>
+                          {link.label}
+                          {link.special && <Zap className='h-4 w-4 mx-1 text-primary fill-primary' />}
+                          {/* السهم الصغير بيظهر جنب كلمة المتجر وبيلف لما الماوس يجي عليه */}
+                          {link.isShop && <ChevronDown className='h-4 w-4 mx-1 opacity-50 group-hover:rotate-180 transition-transform duration-300' />}
+                        </motion.span>
+                      </Link>
+                      
+                      {/* خط التحديد أسفل الرابط النشط */}
+                      {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-lg' />}
+                      
+                      {/* ✨ القائمة المنسدلة (Dropdown) تظهر عند الوقوف على المتجر */}
+                      {link.isShop && categories.length > 0 && (
+                        <div className={cn(
+                          'absolute top-full mt-0 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50',
+                          isRTL ? 'right-0' : 'left-0'
+                        )}>
+                          <div className='bg-background border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl p-2 flex flex-col'>
+                            <Link href="/shop" className='px-4 py-2.5 text-sm font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900/50 text-gray-900 dark:text-gray-100 transition-colors mb-1'>
+                              {language === 'ar' ? 'كل المنتجات' : 'All Products'}
+                            </Link>
+                            <div className='h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-1'></div>
+                            
+                            {categories.map((cat) => (
+                              <Link 
+                                key={cat._id} 
+                                href={`/shop?category=${cat.slug || cat._id}`} 
+                                className='px-4 py-2 text-sm font-medium rounded-xl hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors'
+                              >
+                                {cat.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )
                 })
               )}
             </nav>
 
-            {/* الأيقونات كلها بتعمل لودينج مع بعض */}
+            {/* الأيقونات */}
             {isLoadingComplete ? (
               <div className='flex items-center gap-2 sm:gap-3 flex-shrink-0'>
                 <div className="hidden lg:block h-8 w-8 bg-muted/50 animate-pulse rounded-full"></div>
