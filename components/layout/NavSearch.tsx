@@ -1,15 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Loader2, ArrowRight } from 'lucide-react'
+import { Search, Loader2, ArrowRight, X, SearchX, ExternalLink } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { productsAPI } from '@/lib/api'
 import type { Product } from '@/lib/types'
-// ✨ التعديل: استدعينا getImageUrl عشان الصور تظهر دايماً سليمة
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface NavSearchProps {
@@ -33,25 +31,40 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
 
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    
     if (!searchQuery.trim()) {
       setSearchResults([])
-      setShowResults(false)
       setIsSearching(false)
+      // لا نغلق نافذة النتائج إذا كان المستخدم يركز على الإدخال ليرى "البحث السريع"
       return
     }
 
     setIsSearching(true)
+    setShowResults(true)
+    
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const response = await productsAPI.getAll({ keyword: searchQuery.trim(), limit: 5 })
-        setSearchResults(response.data || [])
-        setShowResults(true)
+        
+        // ✨ استخراج ذكي للبيانات: عشان نتجنب أي خطأ في هيكل البيانات اللي راجع من الباك إند
+        let productsArray: Product[] = []
+        if (response && Array.isArray(response.data)) {
+            productsArray = response.data
+        } else if (response && response.data && Array.isArray((response.data as any).data)) {
+            productsArray = (response.data as any).data
+        } else if (Array.isArray(response)) {
+            productsArray = response
+        }
+        
+        setSearchResults(productsArray)
       } catch (error) {
+        console.error("Search error:", error)
         setSearchResults([])
       } finally {
         setIsSearching(false)
       }
-    }, 400)
+    }, 400) // Debounce
+    
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) }
   }, [searchQuery])
 
@@ -65,36 +78,94 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`)
+  const executeSearch = (query: string) => {
+    if (query.trim()) {
+      router.push(`/shop?search=${encodeURIComponent(query.trim())}`)
       setSearchQuery('')
       setShowResults(false)
       if (setIsOpen) setIsOpen(false)
     }
   }
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    executeSearch(searchQuery)
+  }
+
+  const clearSearch = () => {
+    setSearchQuery('')
+    // نركز على حقل الإدخال مرة أخرى
+    const input = document.getElementById('nav-search-input')
+    if (input) input.focus()
+  }
+
   const SearchInput = () => (
-    <form onSubmit={handleSearch} className={cn('relative', isMobile && 'mb-2')}>
-      <Search className={cn('absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground', isRTL ? 'right-4' : 'left-4')} />
+    <form onSubmit={handleSearch} className={cn('relative flex items-center', isMobile && 'mb-2')}>
+      <Search className={cn('absolute h-[18px] w-[18px] text-muted-foreground transition-colors', 
+        isSearching && 'text-primary',
+        isRTL ? 'right-4' : 'left-4'
+      )} />
+      
       <Input
-        type='search'
-        placeholder={t('search')}
+        id="nav-search-input"
+        type='text'
+        placeholder={t('search') + '...'}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        onFocus={() => searchQuery && setShowResults(true)}
-        className={cn('h-12 rounded-xl border-primary/30 focus-visible:ring-primary', isRTL ? 'pr-11 pl-11' : 'pl-11 pr-11')}
-        autoFocus={isMobile}
+        onFocus={() => setShowResults(true)}
+        className={cn(
+          'h-12 w-full rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background transition-all shadow-inner',
+          isRTL ? 'pr-11 pl-12' : 'pl-11 pr-12',
+          isMobile && 'text-base' // لمنع زووم الآيفون التلقائي
+        )}
+        autoComplete="off"
       />
-      {isSearching && <Loader2 className={cn('absolute top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary', isRTL ? 'left-4' : 'right-4')} />}
+      
+      <div className={cn('absolute flex items-center gap-1.5', isRTL ? 'left-3' : 'right-3')}>
+        {isSearching && <Loader2 className='h-4 w-4 animate-spin text-primary' />}
+        
+        <AnimatePresence>
+          {searchQuery && !isSearching && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              type="button"
+              onClick={clearSearch}
+              className="h-6 w-6 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
     </form>
   )
 
   const SearchResultsList = () => (
-    <>
-      {searchResults.length > 0 && searchQuery && (
-        <div className={cn('mt-3 pt-3 border-t max-h-80 overflow-y-auto scrollbar-thin', isMobile ? 'bg-card rounded-xl border max-h-60' : '')}>
+    <div className="flex flex-col">
+      {/* 1. حالة التحميل (Skeleton) */}
+      {isSearching && searchQuery && (
+        <div className="py-4 px-2 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3 animate-pulse">
+              <div className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-800 flex-shrink-0"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-3/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                <div className="h-3 w-1/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 2. عرض النتائج */}
+      {!isSearching && searchResults.length > 0 && searchQuery && (
+        <div className={cn('py-2 max-h-[60vh] md:max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800', isMobile && 'rounded-xl')}>
+          <div className="px-3 pb-2 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+            {language === 'ar' ? 'المنتجات' : 'Products'}
+          </div>
+          
           {searchResults.map((product) => (
             <button
               key={product._id}
@@ -105,43 +176,79 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
                 setSearchQuery('')
                 if (setIsOpen) setIsOpen(false)
               }}
-              className='w-full flex items-center gap-3 p-3 hover:bg-muted/80 rounded-xl transition-colors text-right'
+              className='w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors text-right group'
             >
-              <div className='relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0'>
-                {/* ✨ التعديل هنا لضمان عمل الصور بشكل سليم */}
-                <Image 
+              <div className='relative w-12 h-12 rounded-lg overflow-hidden bg-white dark:bg-gray-950 border flex-shrink-0 shadow-sm'>
+                <img 
                   src={product.imageCover ? getImageUrl(product.imageCover) : '/placeholder.svg'} 
-                  alt={product.title} 
-                  fill 
-                  sizes="48px"
-                  className='object-cover' 
+                  alt={product.title}
+                  onError={(e) => { e.currentTarget.src = '/placeholder.svg' }}
+                  className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300' 
                 />
               </div>
               <div className={cn('flex-1 min-w-0', isRTL ? 'text-right' : 'text-left')}>
-                <p className='font-medium text-sm line-clamp-1'>{isRTL ? (product.titleAr || product.title) : product.title}</p>
-                <p className='text-xs text-muted-foreground'>
-                  {product.price} {language === 'ar' ? 'جنيه' : 'EGP'}
+                <p className='font-semibold text-sm line-clamp-1 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors'>
+                  {isRTL ? (product.titleAr || product.title) : product.title}
                 </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className='text-xs font-bold text-primary'>
+                    {product.price} {language === 'ar' ? 'جنيه' : 'EGP'}
+                  </p>
+                  {product.priceAfterDiscount && (
+                    <span className="text-[10px] text-muted-foreground line-through">
+                      {product.priceAfterDiscount}
+                    </span>
+                  )}
+                </div>
               </div>
-              <ArrowRight className={cn('h-4 w-4 text-muted-foreground flex-shrink-0', isRTL && 'rotate-180')} />
+              <ArrowRight className={cn('h-4 w-4 text-gray-300 group-hover:text-primary transition-colors flex-shrink-0 transform group-hover:translate-x-1', isRTL && 'rotate-180 group-hover:-translate-x-1')} />
             </button>
           ))}
+          
+          {/* زر عرض كل النتائج */}
+          <div className="p-3 mt-1">
+            <Button 
+              variant="default" 
+              className="w-full text-xs font-bold shadow-none" 
+              onClick={() => executeSearch(searchQuery)}
+            >
+              {language === 'ar' ? `عرض كل النتائج لـ "${searchQuery}"` : `View all results for "${searchQuery}"`}
+              <ExternalLink className={cn("h-3.5 w-3.5", isRTL ? "mr-2" : "ml-2")} />
+            </Button>
+          </div>
         </div>
       )}
-      {/* Quick Search for Desktop */}
-      {!isMobile && !searchQuery && (
-        <div className='mt-3 pt-3 border-t'>
-          <p className='text-xs text-muted-foreground mb-2 font-medium'>{language === 'ar' ? 'بحث سريع' : 'Quick Search'}</p>
+
+      {/* 3. حالة عدم وجود نتائج (Empty State) */}
+      {!isSearching && searchResults.length === 0 && searchQuery && (
+        <div className="py-12 px-4 flex flex-col items-center justify-center text-center">
+          <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3 text-gray-400">
+            <SearchX className="h-6 w-6" />
+          </div>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {language === 'ar' ? 'لم نتمكن من العثور على نتائج' : 'No results found'}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-[250px]">
+            {language === 'ar' 
+              ? `لا توجد منتجات تطابق "${searchQuery}". جرب كلمات مختلفة.` 
+              : `We couldn't find anything matching "${searchQuery}". Try different keywords.`}
+          </p>
+        </div>
+      )}
+
+      {/* 4. البحث السريع (يظهر عندما يكون الحقل فارغاً) */}
+      {!searchQuery && (
+        <div className='p-4 pt-2'>
+          <p className='text-[11px] font-bold tracking-wider text-muted-foreground uppercase mb-3'>
+            {language === 'ar' ? 'عمليات بحث شائعة' : 'Popular Searches'}
+          </p>
           <div className='flex flex-wrap gap-2'>
-            {(language === 'ar' ? ['عباءات', 'حجاب', 'تخفيضات'] : ['Abayas', 'Hijabs', 'Sale']).map((term) => (
+            {(language === 'ar' ? ['عباءات', 'تخفيضات', 'حجاب', 'جديدنا'] : ['Abayas', 'Sale', 'Hijabs', 'New In']).map((term) => (
               <button
                 key={term}
                 type='button'
-                onClick={() => {
-                  router.push(`/shop?search=${term}`)
-                  setShowResults(false)
-                }}
-                className='text-xs px-3 py-1.5 rounded-full bg-primary/15 hover:bg-primary/25 font-medium text-primary transition-colors'
+                onClick={() => executeSearch(term)}
+                className='text-xs px-3.5 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary font-medium text-gray-700 dark:text-gray-300 transition-colors border border-transparent hover:border-primary/20'
               >
                 {term}
               </button>
@@ -149,38 +256,83 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 
+  // تصميم الموبايل
   if (isMobile) {
     return (
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className='md:hidden border-t bg-card/50 backdrop-blur-md p-3'>
-            <SearchInput />
-            <SearchResultsList />
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -10 }} 
+            transition={{ duration: 0.2 }}
+            className='md:hidden absolute top-full left-0 right-0 z-50 bg-background border-b shadow-xl'
+          >
+            <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/30">
+              <SearchInput />
+            </div>
+            <div className="bg-background max-h-[70vh] overflow-y-auto">
+              <SearchResultsList />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
     )
   }
 
+  // تصميم الديسكتوب
   return (
     <>
       <AnimatePresence>
-        {showResults && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className='fixed inset-0 bg-black/20 backdrop-blur-sm z-40' onClick={() => setShowResults(false)} />}
+        {showResults && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className='fixed inset-0 bg-black/40 backdrop-blur-sm z-40' 
+            onClick={() => setShowResults(false)} 
+          />
+        )}
       </AnimatePresence>
+      
       <div className='hidden md:block relative z-50' ref={searchRef}>
-        <Button variant='ghost' size='icon' className={cn('h-10 w-10 rounded-xl', showResults ? 'bg-primary/15 text-primary' : 'hover:bg-primary/15 hover:text-primary')} onClick={() => setShowResults(!showResults)}>
-          <Search className='h-5 w-5' />
+        <Button 
+          variant='ghost' 
+          size='icon' 
+          className={cn(
+            'h-10 w-10 rounded-full transition-all duration-200', 
+            showResults ? 'bg-primary text-primary-foreground shadow-md' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'
+          )} 
+          onClick={() => {
+            setShowResults(!showResults)
+            if (!showResults) {
+              setTimeout(() => document.getElementById('nav-search-input')?.focus(), 100)
+            }
+          }}
+        >
+          <Search className='h-[18px] w-[18px]' />
         </Button>
+        
         <AnimatePresence>
           {showResults && (
-            <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} className={cn('absolute top-full mt-3 w-[380px]', 'bg-card border border-border rounded-2xl shadow-2xl overflow-hidden', isRTL ? 'left-0' : 'right-0')}>
-              <div className='p-4'>
+            <motion.div 
+              initial={{ opacity: 0, y: 10, scale: 0.98 }} 
+              animate={{ opacity: 1, y: 0, scale: 1 }} 
+              exit={{ opacity: 0, y: 10, scale: 0.98 }} 
+              transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+              className={cn(
+                'absolute top-[calc(100%+12px)] w-[420px]', 
+                'bg-background border border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden', 
+                isRTL ? 'left-0' : 'right-0'
+              )}
+            >
+              <div className='p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50'>
                 <SearchInput />
-                <SearchResultsList />
               </div>
+              <SearchResultsList />
             </motion.div>
           )}
         </AnimatePresence>
