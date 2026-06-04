@@ -82,9 +82,11 @@ export default function AdminOrderDetailsPage({ params }: { params: { id: string
   const fetchOrder = async () => {
     try {
       setLoading(true)
-      const response = await adminOrdersAPI.getById(params.id)
-      setOrder(response.data)
-      setStatus(response.data.status || 'pending')
+      const orderData = await adminOrdersAPI.getById(params.id)
+      
+      // ✨ التعديل السحري هنا: استخدمنا orderData مباشرة بدل response.data
+      setOrder(orderData)
+      setStatus(orderData?.status || 'pending')
     } catch (error: any) {
       console.error('Failed to fetch order:', error)
       toast({
@@ -314,7 +316,7 @@ export default function AdminOrderDetailsPage({ params }: { params: { id: string
                 </Avatar>
                 <div className='flex-1'>
                   <p className='font-bold text-lg'>{order.user?.name || 'غير معروف'}</p>
-                  <p className='text-xs text-muted-foreground'>معرف العميل: #{order.user?._id.slice(-6)}</p>
+                  <p className='text-xs text-muted-foreground'>معرف العميل: #{order.user?._id?.slice(-6) || 'N/A'}</p>
                 </div>
                 <Link href={`/admin/users?search=${order.user?.email}`}>
                   <Button variant="outline" size="sm">عرض الملف</Button>
