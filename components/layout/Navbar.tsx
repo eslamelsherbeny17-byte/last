@@ -118,7 +118,8 @@ export function Navbar() {
 
   return (
     <>
-      <header className={cn('sticky top-0 z-50 w-full transition-all duration-300', isScrolled ? 'shadow-lg' : 'shadow-sm')}>
+      {/* تم تغيير sticky top-0 إلى relative */}
+      <header className={cn('relative z-50 w-full transition-all duration-300', isScrolled ? 'shadow-sm' : '')}>
         <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary'>
           <div className='container mx-auto px-4 py-1.5 relative text-center text-[10px] sm:text-xs font-semibold text-white flex justify-center gap-4'>
             <span className='flex items-center gap-1'><Sparkles className='h-3 w-3' />{t('freeShipping')}</span>
@@ -127,7 +128,7 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
+        <div className='bg-background border-b'>
           <div className='container mx-auto px-4 flex h-16 items-center justify-between'>
             <div className='lg:hidden w-10'>
               <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)}>
@@ -168,7 +169,6 @@ export function Navbar() {
                 {isAuthenticated ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild><Button variant='ghost' size='icon' className='rounded-full'><Avatar className='h-9 w-9'><AvatarFallback className='bg-primary/15 text-primary font-bold'>{getUserInitials(user?.name)}</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
-                    {/* ✨ التعديل هنا: إضافة z-[100] و sideOffset */}
                     <DropdownMenuContent align='end' sideOffset={8} className='w-56 z-[100]'>
                       <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
