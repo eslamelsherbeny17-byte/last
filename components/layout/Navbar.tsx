@@ -36,8 +36,9 @@ export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
 
-  // البيانات الديناميكية
-  const [storeName, setStoreName] = useState(t('brandName'))
+  // ✨ تم إضافة حالة التحميل الخاصة بالناف بار
+  const [isNavLoading, setIsNavLoading] = useState(true)
+  const [storeName, setStoreName] = useState('') // خليناها فاضية في البداية عشان مفيش اسم وهمي يظهر
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
 
   const isAdmin = user?.role === 'admin'
@@ -46,9 +47,12 @@ export function Navbar() {
   useEffect(() => {
     const fetchDynamicData = async () => {
       try {
+        setIsNavLoading(true) // بدأ التحميل
         const settingsRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/settings`)
         if (settingsRes.data?.data?.siteName) {
           setStoreName(settingsRes.data.data.siteName)
+        } else {
+          setStoreName(t('brandName')) // لو مفيش اسم في الداتابيز، نستخدم الافتراضي
         }
 
        const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
@@ -75,15 +79,18 @@ export function Navbar() {
         setDynamicNavLinks([...baseLinks, ...categoryLinks, saleLink])
       } catch (error) {
         console.error("Error fetching dynamic nav data", error)
+        setStoreName(t('brandName'))
         setDynamicNavLinks([
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop' },
           { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
         ])
+      } finally {
+        setIsNavLoading(false) // إنهاء التحميل
       }
     }
     fetchDynamicData()
-  }, [language])
+  }, [language, t])
 
   const handleScroll = useCallback(() => setIsScrolled(window.scrollY > 10), [])
   useEffect(() => {
@@ -118,8 +125,7 @@ export function Navbar() {
 
   return (
     <>
-      {/* تم تغيير sticky top-0 إلى relative */}
-      <header className={cn('relative z-50 w-full transition-all duration-300', isScrolled ? 'shadow-sm' : '')}>
+      <header className={cn('relative md:sticky top-0 z-50 w-full transition-all duration-300', isScrolled ? 'shadow-md' : 'shadow-sm')}>
         <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary'>
           <div className='container mx-auto px-4 py-1.5 relative text-center text-[10px] sm:text-xs font-semibold text-white flex justify-center gap-4'>
             <span className='flex items-center gap-1'><Sparkles className='h-3 w-3' />{t('freeShipping')}</span>
@@ -128,7 +134,7 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className='bg-background border-b'>
+        <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
           <div className='container mx-auto px-4 flex h-16 items-center justify-between'>
             <div className='lg:hidden w-10'>
               <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)}>
@@ -137,24 +143,36 @@ export function Navbar() {
             </div>
 
             <Link href='/' className='flex-1 lg:flex-none flex justify-center lg:justify-start px-2'>
-              <span className='text-xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
-                {storeName}
-              </span>
+              {/* ✨ السكيليتون لاسم المتجر (علامة التحميل) */}
+              {isNavLoading ? (
+                <div className="h-8 sm:h-10 w-32 sm:w-48 bg-muted/60 animate-pulse rounded-lg"></div>
+              ) : (
+                <span className='text-xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
+                  {storeName}
+                </span>
+              )}
             </Link>
 
             <nav className='hidden lg:flex items-center gap-2 flex-1 justify-center'>
-              {dynamicNavLinks.map((link) => {
-                const isActive = pathname === link.href
-                return (
-                  <Link key={link.href} href={link.href} className='relative group px-5 py-2'>
-                    <motion.span className={cn('text-[16px] font-bold transition-all', isActive ? 'text-primary' : 'text-foreground/80 hover:text-primary', link.special && 'flex items-center gap-2')}>
-                      {link.label}
-                      {link.special && <Zap className='h-4 w-4 text-primary fill-primary' />}
-                    </motion.span>
-                    {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-full' />}
-                  </Link>
-                )
-              })}
+              {/* ✨ السكيليتون لروابط الناف بار */}
+              {isNavLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-6 w-16 bg-muted/50 animate-pulse rounded-md mx-2"></div>
+                ))
+              ) : (
+                dynamicNavLinks.map((link) => {
+                  const isActive = pathname === link.href
+                  return (
+                    <Link key={link.href} href={link.href} className='relative group px-5 py-2'>
+                      <motion.span className={cn('text-[16px] font-bold transition-all', isActive ? 'text-primary' : 'text-foreground/80 hover:text-primary', link.special && 'flex items-center gap-2')}>
+                        {link.label}
+                        {link.special && <Zap className='h-4 w-4 text-primary fill-primary' />}
+                      </motion.span>
+                      {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-full' />}
+                    </Link>
+                  )
+                })
+              )}
             </nav>
 
             <div className='flex items-center gap-1 lg:gap-2'>
