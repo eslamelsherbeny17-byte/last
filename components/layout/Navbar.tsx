@@ -66,7 +66,8 @@ export function Navbar() {
     const fetchDynamicData = async () => {
       try {
         setIsNavLoading(true)
-        const settingsRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/settings`)
+        // ✨ التعديل هنا: تم تغيير الرابط إلى /settings
+        const settingsRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/settings`)
         const data = settingsRes.data?.data
         
         if (data) {

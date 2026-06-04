@@ -14,7 +14,10 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '10');
-    const search = url.searchParams.get('search') || '';
+    
+    // ✨ التعديل هنا: خلينا الباك إند يستقبل keyword أو search عشان يشتغل مع أي شاشة
+    const search = url.searchParams.get('keyword') || url.searchParams.get('search') || '';
+    
     const category = url.searchParams.get('category');
     const brand = url.searchParams.get('brand');
     const sort = url.searchParams.get('sort') || '-createdAt';
@@ -28,6 +31,7 @@ export async function GET(req: NextRequest) {
         { title: { $regex: search, $options: 'i' } },
         { titleAr: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
+        { descriptionAr: { $regex: search, $options: 'i' } }, // ✨ ضفنا الوصف العربي بالمرة
       ];
     }
 
@@ -66,7 +70,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
-
 export async function POST(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
