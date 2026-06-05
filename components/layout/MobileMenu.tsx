@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { X, UserCircle, Package, MapPin, Crown, LogOut, ChevronRight, Settings, Zap } from 'lucide-react'
+import { X, UserCircle, Package, MapPin, Crown, LogOut, ChevronRight,Heart, Settings, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -76,6 +76,12 @@ export function MobileMenu({ isOpen, setIsOpen, navLinks, user, isAuthenticated,
                 <Link href='/profile' onClick={() => setIsOpen(false)}><div className='flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted/80'><UserCircle className='h-5 w-5 text-primary' /><span className='text-sm font-semibold'>{t('profile')}</span></div></Link>
                 <Link href='/profile/orders' onClick={() => setIsOpen(false)}><div className='flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted/80'><Package className='h-5 w-5 text-primary' /><span className='text-sm font-semibold'>{t('orders')}</span></div></Link>
                 <Link href='/profile/addresses' onClick={() => setIsOpen(false)}><div className='flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted/80'><MapPin className='h-5 w-5 text-primary' /><span className='text-sm font-semibold'>{t('addresses')}</span></div></Link>
+                <Link href='/wishlist' onClick={() => setIsOpen(false)}>
+                  <div className='flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted/80'>
+                    <Heart className='h-5 w-5 text-red-500' />
+                    <span className='text-sm font-semibold'>{t('wishlist')}</span>
+                  </div>
+                </Link>
                 {isAdmin && (
                   <>
                     <Separator className='my-2' />

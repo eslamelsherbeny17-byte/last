@@ -291,7 +291,7 @@ export function Navbar() {
 
                   {!isAdmin && (
                     <div className="flex items-center gap-0.5 sm:gap-1">
-                      <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='hidden sm:flex relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
+                      <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='hidden md:flex relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
                         <Heart className={cn('h-5 w-5 transition-colors', isAuthenticated && wishlistCount > 0 ? 'fill-red-500 text-red-500' : 'text-foreground/80')} />
                         {isAuthenticated && wishlistCount > 0 && (
                           <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-red-500 text-white flex items-center justify-center rounded-full text-[8px] sm:text-[9px] border-2 border-background'>

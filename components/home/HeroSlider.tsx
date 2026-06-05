@@ -12,30 +12,44 @@ export default function HeroSlider() {
   const { language, isRTL } = useLanguage()
   const [bannerData, setBannerData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isMounted, setIsMounted] = useState(false); // ✨ 1. الحالة الجديدة لمنع خطأ الـ Hydration
+
+  // عند التحميل في المتصفح لأول مرة، نغير الحالة
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchBannerSettings = async () => {
       try {
-        setLoading(true)
-        const res = await fetch('/api/settings')
-        const settingsData = await res.json()
-        if (settingsData.data && settingsData.data.heroBanner) {
-          setBannerData(settingsData.data.heroBanner)
+        // لا نبدأ التحميل إلا بعد التأكد من أننا في المتصفح
+        if (isMounted) {
+          setLoading(true);
+          // ✨ 2. تعطيل الـ Caching لجلب البيانات المحدثة دائماً
+          const res = await fetch('/api/settings', { cache: 'no-store' }); 
+          const settingsData = await res.json();
+          if (settingsData.data && settingsData.data.heroBanner) {
+            setBannerData(settingsData.data.heroBanner);
+          }
         }
       } catch (error) {
-        console.error("Failed to fetch hero banner settings:", error)
+        console.error("Failed to fetch hero banner settings:", error);
       } finally {
-        setLoading(false)
+        // لا نغير loading إلا بعد التأكد من أننا في المتصفح
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
-    fetchBannerSettings()
-  }, [])
+    fetchBannerSettings();
+  }, [isMounted]); // ✨ يتم تشغيل هذا التأثير عند تغير isMounted
 
   // ============================================
   // شاشة التحميل الاحترافية (Skeleton)
+  // ✨ 3. نعرض شاشة التحميل إذا لم يتم التحميل في المتصفح أو إذا كانت البيانات قيد الجلب
   // ============================================
-  if (loading) {
+  if (!isMounted || loading) {
     return (
       <section className="relative w-full overflow-hidden bg-background">
         {/* Skeleton للموبايل */}
@@ -43,7 +57,7 @@ export default function HeroSlider() {
           <div className={cn("space-y-4 w-full", isRTL ? "items-end text-right flex flex-col" : "items-start text-left flex flex-col")}>
             <div className="w-24 h-6 bg-zinc-800 rounded-full"></div>
             <div className="w-3/4 h-10 bg-zinc-800 rounded-lg"></div>
-            <div className="w-1/2 h-10 bg-zinc-800 rounded-lg"></div>
+            <div className="w-1/2 h-10 bg-zinc-800 rounded-lg -mt-1"></div>
             <div className="w-full h-3 bg-zinc-800 rounded-full mt-2"></div>
             <div className="w-5/6 h-3 bg-zinc-800 rounded-full"></div>
             <div className="w-32 h-12 bg-zinc-800 rounded-full mt-4"></div>
@@ -54,7 +68,6 @@ export default function HeroSlider() {
         <div className="hidden lg:block relative h-[650px] xl:h-[750px] w-full overflow-hidden bg-gray-50/50 dark:bg-zinc-950/50">
           <div className="container mx-auto h-full grid lg:grid-cols-2 items-center gap-12 px-6">
             
-            {/* الهيكل النصي */}
             <div className={cn("order-2 lg:order-1 flex flex-col", isRTL ? "items-end" : "items-start")}>
               <div className="w-32 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full animate-pulse mb-6"></div>
               <div className="w-3/4 h-16 bg-gray-200 dark:bg-zinc-800 rounded-2xl animate-pulse mb-3"></div>
@@ -64,7 +77,6 @@ export default function HeroSlider() {
               <div className="w-48 h-14 bg-gray-200 dark:bg-zinc-800 rounded-full animate-pulse"></div>
             </div>
 
-            {/* هيكل إطار الصورة */}
             <div className="order-1 lg:order-2 flex items-center justify-center lg:justify-end">
               <div className="w-full max-w-[450px] xl:max-w-[520px] aspect-[4/5] rounded-[32px] bg-gray-200 dark:bg-zinc-800 animate-pulse flex items-center justify-center border-4 border-white/50 dark:border-zinc-800/50">
                  <ImageIcon className="w-16 h-16 text-gray-300 dark:text-zinc-700 opacity-50" />
@@ -91,10 +103,8 @@ export default function HeroSlider() {
 
   return (
     <section className="relative w-full overflow-hidden bg-background">
+      {/* ... باقي الكود الخاص بعرض المحتوى الفعلي كما هو بدون تغيير ... */}
       
-      {/* ============================================ */}
-      {/* نسخة الموبايل (صورة تملأ الشاشة مع تظليل سفلي) */}
-      {/* ============================================ */}
       <div className="lg:hidden relative w-full h-[75vh] min-h-[500px] overflow-hidden bg-zinc-950">
         <div className="relative h-full w-full flex-shrink-0 select-none">
           <Image
@@ -131,9 +141,6 @@ export default function HeroSlider() {
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* نسخة الديسكتاب (الإطار الكلاسيكي الفخم) */}
-      {/* ============================================ */}
       <div className="hidden lg:block relative h-[650px] xl:h-[750px] w-full overflow-hidden">
         {/* خلفية متدرجة ناعمة للموقع */}
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/50 via-background to-background" />
