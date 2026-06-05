@@ -8,9 +8,8 @@ export default function ShopLayout({
 }) {
   return (
     <>
-      <Navbar />
-      <main className='min-h-screen'>{children}</main>
-      <Footer />
+      {/* شلنا الناف بار والفوتر من هنا لأنهم بقوا في الـ RootLayout */}
+      {children}
     </>
   )
 }

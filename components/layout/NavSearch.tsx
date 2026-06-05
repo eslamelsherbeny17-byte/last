@@ -113,15 +113,25 @@ export function NavSearch({ isMobile, language, t, isRTL, isOpen, setIsOpen }: N
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const executeSearch = (query: string) => {
+ const executeSearch = (query: string) => {
     if (query.trim()) {
-      router.push(`/shop?search=${encodeURIComponent(query.trim())}`)
+      let url = `/shop?search=${encodeURIComponent(query.trim())}`
+      
+      // لو العميل ضغط على الكلمات العامة، نوديه للفلتر مباشرة
+      if (query === 'تخفيضات' || query === 'Sale') {
+        url = '/shop?sale=true'
+      } else if (query === 'الأكثر مبيعاً' || query === 'Best Sellers') {
+        url = '/shop?sort=bestsellers'
+      } else if (query === 'وصل حديثاً' || query === 'New Arrivals') {
+        url = '/shop?sort=newest'
+      }
+
+      router.push(url)
       setSearchQuery('')
       setShowResults(false)
       if (setIsOpen) setIsOpen(false)
     }
   }
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     executeSearch(searchQuery)

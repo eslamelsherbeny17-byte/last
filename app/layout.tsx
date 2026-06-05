@@ -11,6 +11,8 @@ import { OrdersProvider } from "@/contexts/OrdersContext"
 import { ThemeProvider } from "@/contexts/ThemeContext"
 import { LanguageProvider } from "@/contexts/LanguageContext"
 import { Toaster } from "sonner" 
+import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
 
 const cairo = Cairo({
   subsets: ["arabic"],
@@ -36,50 +38,45 @@ const inter = Inter({
   preload: true,
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: "Ayman Bashir - Islamic Fashion Store | أيمن بشير - متجر الأزياء الإسلامية",
-    template: "%s | Ayman Bashir",
-  },
-  description:
-    "Modern and elegant Islamic fashion store offering abayas, hijabs, and modest clothing | متجر متخصص في الأزياء الإسلامية العصرية والأنيقة - عباءات، حجاب، وملابس محتشمة",
-  keywords: [
-    "أزياء إسلامية",
-    "عباءات",
-    "حجاب",
-    "ملابس محتشمة",
-    "Islamic fashion",
-    "abayas",
-    "hijabs",
-    "modest clothing",
-    "Islamic clothing Egypt",
-    "Ayman Bashir",
-  ],
-  authors: [{ name: "Ayman Bashir" }],
-  creator: "Ayman Bashir",
-  publisher: "Ayman Bashir",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-  openGraph: {
-    type: "website",
-    locale: "ar_EG",
-    alternateLocale: "en_US",
-    siteName: "Ayman Bashir",
-    title: "Ayman Bashir - Islamic Fashion Store",
-    description: "Modern and elegant Islamic fashion store",
-  },
-  generator: "v0.app",
-}
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    // جلب الإعدادات من الـ API (وممكن نخليه يعمل كاش لمدة ساعة مثلاً عشان سرعة الموقع)
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings`, { 
+      next: { revalidate: 3600 } 
+    });
+    const response = await res.json();
+    const settings = response?.data;
 
+    // استخراج البيانات أو استخدام قيم افتراضية قوية لو الإعدادات فاضية
+    const siteName = settings?.siteName || "بسمه ستور";
+    const description = settings?.description || "متجر إلكتروني متكامل لتسوق أفضل المنتجات بأعلى جودة.";
+
+    return {
+      title: {
+        default: siteName,
+        template: `%s | ${siteName}`, // هيخلي الصفحات التانية تظهر كده: "عربة التسوق | بسمه ستور"
+      },
+      description: description,
+      keywords: settings?.keywords || [siteName, "تسوق", "متجر", "أونلاين"],
+      openGraph: {
+        type: "website",
+        locale: "ar_EG",
+        siteName: siteName,
+        title: siteName,
+        description: description,
+      },
+    }
+  } catch (error) {
+    // في حالة فشل الاتصال بالسيرفر، نرجع بيانات احتياطية عشان الـ SEO ميقعش
+    return {
+      title: {
+        default: "بسمه ستور",
+        template: "%s | بسمه ستور",
+      },
+      description: "متجر إلكتروني متكامل لتسوق أفضل المنتجات.",
+    }
+  }
+}
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -128,7 +125,12 @@ export default function RootLayout({
                 <WishlistProvider>
                   <AddressProvider>
                     <OrdersProvider>
-                      {children}
+                      
+                      {/* ✨ الناف بار والفوتر بقوا هنا، كدة هيفضلوا ثابتين في كل الموقع */}
+                      <Navbar />
+                      <main className='min-h-screen'>{children}</main>
+                      <Footer />
+                      
                       <Toaster 
                         position="bottom-right"
                         dir="rtl"

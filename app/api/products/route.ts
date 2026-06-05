@@ -8,6 +8,8 @@ import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 
 
 
+
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -15,17 +17,13 @@ export async function GET(req: NextRequest) {
     await dbConnect();
     const searchParams = req.nextUrl.searchParams;
 
-    // 1. إعدادات الصفحات (Pagination)
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '12'); // 12 منتج عشان يملوا الشبكة (Grid) بشكل متناسق
+    const limit = parseInt(searchParams.get('limit') || '12'); 
     const skip = (page - 1) * limit;
 
-    // 2. استخراج المتغيرات من الرابط
     const search = searchParams.get('keyword') || searchParams.get('search') || '';
     const categories = searchParams.getAll('category');
     const brands = searchParams.getAll('brand');
-    
-    // الفرونت إند بيبعت السعر بالشكل ده price[gte] و price[lte]
     const priceGte = searchParams.get('price[gte]'); 
     const priceLte = searchParams.get('price[lte]');
     const isDiscounted = searchParams.get('isDiscounted');
@@ -33,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     let query: any = {};
 
-    // --- أ. فلتر البحث الذكي (يدعم الهمزات والتاء المربوطة) ---
+    // 1. البحث الذكي بالكلمات
     if (search) {
       const arabicRegex = search
         .replace(/[أإآا]/g, '[أإآا]')
@@ -48,33 +46,30 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // --- ب. فلتر الأقسام (Categories) ---
+    // 2. فلتر الأقسام
     if (categories.length > 0 && categories[0] !== 'all' && categories[0] !== '') {
-      // معالجة لو الأقسام مبعوتة كمصفوفة أو نص مفصول بفاصلة
       const catArray = categories[0].includes(',') ? categories[0].split(',') : categories;
       query.category = { $in: catArray };
     }
 
-    // --- ج. فلتر الماركات (Brands) ---
+    // 3. فلتر الماركات
     if (brands.length > 0 && brands[0] !== 'all' && brands[0] !== '') {
       const brandArray = brands[0].includes(',') ? brands[0].split(',') : brands;
       query.brand = { $in: brandArray };
     }
 
-    // --- د. فلتر السعر (Price Range) ---
+    // 4. فلتر السعر
     if (priceGte || priceLte) {
       query.price = {};
       if (priceGte) query.price.$gte = Number(priceGte);
       if (priceLte) query.price.$lte = Number(priceLte);
     }
 
-    // --- هـ. فلتر التخفيضات (Sale) ---
+    // 5. فلتر التخفيضات
     if (isDiscounted === 'true') {
-      // لو المنتج عليه خصم، لازم يكون حقل السعر بعد الخصم موجود وأكبر من صفر
       query.priceAfterDiscount = { $exists: true, $gt: 0 };
     }
 
-    // 3. جلب البيانات من الداتا بيز
     const products = await Product.find(query)
       .populate('category')
       .populate('brand')
@@ -82,7 +77,6 @@ export async function GET(req: NextRequest) {
       .skip(skip)
       .limit(limit);
 
-    // 4. جلب العدد الكلي عشان الـ Pagination في الفرونت إند يشتغل
     const total = await Product.countDocuments(query);
 
     return NextResponse.json(

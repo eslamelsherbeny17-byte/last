@@ -238,7 +238,7 @@ export function Navbar() {
                               href="/shop" 
                               className='px-4 py-2.5 text-[14px] font-bold rounded-lg hover:bg-primary/5 text-primary transition-colors flex items-center justify-between group/btn'
                             >
-                              {language === 'ar' ? 'عرض كل الأقسام' : 'View All Categories'}
+                              {language === 'ar' ? 'عرض كل المنتجات' : 'View All Categories'}
                               <ArrowRight className={cn("h-4 w-4 transition-transform group-hover/btn:translate-x-1", isRTL && "rotate-180 group-hover/btn:-translate-x-1")} />
                             </Link>
                           </div>
