@@ -2,17 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Check,
-  CreditCard,
-  Truck,
-  ShoppingBag,
-  Loader2,
-  MapPin,
-  Plus,
-  Home,
-  Briefcase,
-} from 'lucide-react'
+import { Check, CreditCard, Truck, ShoppingBag, Loader2, MapPin, Plus, Home, Briefcase } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { formatPrice, cn } from '@/lib/utils'
 import { useCart } from '@/contexts/CartContext'
 import { useAddresses } from '@/contexts/AddressContext'
+import { useAuth } from '@/contexts/AuthContext' // 👈 استدعاء مصادقة المستخدم
 import { ordersAPI } from '@/lib/api'
 import { useToast } from '@/lib/use-toast'
 import { Badge } from '@/components/ui/badge'
@@ -28,8 +19,10 @@ import { useLanguage } from '@/contexts/LanguageContext'
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cart } = useCart()
+  // 👈 تأكد من جلب refreshCart لتفريغ السلة بعد الطلب
+  const { cart, refreshCart } = useCart() 
   const { addresses, addAddress, refreshAddresses } = useAddresses()
+  const { isAuthenticated, loading: authLoading } = useAuth() as any // 👈 التحقق من تسجيل الدخول
   const { toast } = useToast()
   const { t, isRTL, language } = useLanguage()
 
@@ -41,17 +34,9 @@ export default function CheckoutPage() {
   const [saveNewAddress, setSaveNewAddress] = useState(true)
 
   const [shippingInfo, setShippingInfo] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    city: '',
-    address: '',
-    postalCode: '',
-    notes: '',
-    alias: 'home',
+    fullName: '', phone: '', email: '', city: '', address: '', postalCode: '', notes: '', alias: 'home',
   })
 
-  // خطوات الدفع مترجمة
   const steps = useMemo(() => [
     { id: 1, name: t('shippingAddress'), icon: Truck },
     { id: 2, name: t('paymentMethod'), icon: CreditCard },
@@ -66,9 +51,16 @@ export default function CheckoutPage() {
     }
   }
 
+  // 🎯 الحماية الجذرية: الاعتماد على المتصفح الموثوق لمنع الطرد العشوائي
   useEffect(() => {
-    refreshAddresses()
-  }, [])
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login?callbackUrl=/checkout')
+    }
+  }, [isAuthenticated, authLoading, router])
+
+  useEffect(() => {
+    if (isAuthenticated) refreshAddresses()
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (addresses.length > 0) {
@@ -123,6 +115,10 @@ export default function CheckoutPage() {
 
       if (paymentMethod === 'cash') {
         const order = await ordersAPI.createCashOrder(cart!._id, shippingAddress)
+        
+        // 🎯 السر الثاني: مسح الأرقام والمنتجات بمجرد نجاح الطلب
+        await refreshCart()
+
         toast({ title: t('success'), description: t('orderPlacedSuccessfully') })
         router.push(`/order-success?orderId=${order.data._id}`)
       } else if (paymentMethod === 'card') {
@@ -139,6 +135,11 @@ export default function CheckoutPage() {
     shipping: 50,
     total: (cart?.totalPriceAfterDiscount || cart?.totalCartPrice || 0) + 50,
     items: cart?.cartItems?.length || 0,
+  }
+
+  // منع ظهور الشاشة بيضاء أثناء التحقق من الدخول
+  if (authLoading || !isAuthenticated) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
   }
 
   return (

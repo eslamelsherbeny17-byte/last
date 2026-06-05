@@ -1,195 +1,208 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ArrowRight, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { cn } from "@/lib/utils"
-import { motion, AnimatePresence } from "framer-motion"
-
-// ✨ تم تقليص العدد إلى 3 شرائح فقط (أفضل ممارسة للـ UX) وتعديل المحتوى ليكون "فاخراً ومختصراً"
-const heroSlides = {
-  ar: [
-    {
-      id: 1,
-      title: "كوليكشن الموسم الجديد",
-      subtitle: "إصدار حصري",
-      description: "تصاميم عصرية تكمل جمالك وتناسب استايلك المميز.",
-      image: "/slider-12.jpg",
-      link: "/shop", 
-      buttonText: "تسوقي المجموعة",
-    },
-    {
-      id: 2,
-      title: "راحة وشياكة في النقاب",
-      subtitle: "الأكثر مبيعاً",
-      description: "خامات خفيفة وعملية تمنحك الطلة التي تبحثين عنها بأعلى جودة.",
-      image: "/slider-7.png",
-      link: "/shop?category=69504643c188856707a0ef7e",
-      buttonText: "اكتشفي الآن",
-    },
-    {
-      id: 3,
-      title: "فخامة الثوب الرجالي",
-      subtitle: "أصالة وأناقة",
-      description: "أجود الخامات التي تناسب كل الأذواق وتكمل أناقتك.",
-      image: "/slider-5.png",
-      link: "/shop?category=695047ce0bfb9b8b5fe82663", 
-      buttonText: "تسوق للرجال",
-    }
-  ],
-  en: [
-    {
-      id: 1,
-      title: "New Season Collection",
-      subtitle: "Exclusive Release",
-      description: "Modern designs that complement your beauty and unique style.",
-      image: "/slider-1.png",
-      link: "/shop",
-      buttonText: "Shop Collection",
-    },
-    {
-      id: 2,
-      title: "Comfort & Style: Niqab",
-      subtitle: "Best Seller",
-      description: "Lightweight, practical fabrics for the premium look you desire.",
-      image: "/slider-7.png",
-      link: "/shop?category=69504643c188856707a0ef7e",
-      buttonText: "Discover Now",
-    },
-    {
-      id: 3,
-      title: "Premium Men's Thobe",
-      subtitle: "Authentic Elegance",
-      description: "The finest fabrics designed to complete your sharp look.",
-      image: "/slider-5.png",
-      link: "/shop?category=695047ce0bfb9b8b5fe82663",
-      buttonText: "Shop Men",
-    }
-  ],
-}
+import { motion } from "framer-motion"
 
 export default function HeroSlider() {
   const { language, isRTL } = useLanguage()
-  const [current, setCurrent] = useState(0)
-  const [isHovering, setIsHovering] = useState(false)
+  const [bannerData, setBannerData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  const slides = heroSlides[language as keyof typeof heroSlides] || heroSlides.ar
-
-  const next = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % slides.length)
-  }, [slides.length])
-
-  const prev = useCallback(() => {
-    setCurrent((prev) => (prev - 1 + slides.length) % slides.length)
-  }, [slides.length])
-
-  // التبديل التلقائي البطيء (كل 6 ثواني بدل 5 لضمان القراءة)
   useEffect(() => {
-    if (isHovering) return
-    const interval = setInterval(next, 6000)
-    return () => clearInterval(interval)
-  }, [next, isHovering])
+    const fetchBannerSettings = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/settings')
+        const settingsData = await res.json()
+        if (settingsData.data && settingsData.data.heroBanner) {
+          setBannerData(settingsData.data.heroBanner)
+        }
+      } catch (error) {
+        console.error("Failed to fetch hero banner settings:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  return (
-    <section 
-      className="relative w-full h-[75vh] min-h-[550px] lg:h-[85vh] lg:min-h-[700px] overflow-hidden bg-black group"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
-      <AnimatePresence initial={false} mode="wait">
-        <motion.div
-          key={current}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-          className="absolute inset-0"
-        >
-          {/* صورة الخلفية الفاخرة التي تملأ الشاشة */}
-          <Image
-            src={slides[current].image}
-            alt={slides[current].title}
-            fill
-            priority={current === 0}
-            className="object-cover object-top lg:object-center"
-            quality={95}
-          />
-          
-          {/* تدرج لوني احترافي يضمن وضوح النص دائماً مهما كانت ألوان الصورة */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent lg:bg-gradient-to-r lg:from-black/80 lg:via-black/50 lg:to-transparent" />
+    fetchBannerSettings()
+  }, [])
 
-          {/* المحتوى النصي (Immersive Typography) */}
-          <div className="absolute inset-0 flex items-end lg:items-center">
-            <div className="container mx-auto px-6 pb-24 lg:pb-0">
-              <div className={cn("max-w-2xl", isRTL ? "text-right" : "text-left")}>
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3, duration: 0.6 }}
-                >
-                  <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-md text-white text-xs lg:text-sm font-bold rounded-full mb-4 lg:mb-6 uppercase tracking-widest border border-white/20">
-                    {slides[current].subtitle}
-                  </span>
-                  <h1 className="text-4xl lg:text-6xl xl:text-7xl font-black text-white leading-[1.1] mb-4 lg:mb-6 drop-shadow-lg">
-                    {slides[current].title}
-                  </h1>
-                  <p className="text-base lg:text-lg text-gray-200 mb-8 max-w-lg leading-relaxed font-medium drop-shadow-md">
-                    {slides[current].description}
-                  </p>
-                  
-                  <Link 
-                    href={slides[current].link} 
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold text-sm lg:text-base hover:scale-105 hover:bg-gray-100 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)]"
-                  >
-                    {slides[current].buttonText}
-                    <ArrowRight className={cn("w-5 h-5", isRTL && "rotate-180")} />
-                  </Link>
-                </motion.div>
+  // ============================================
+  // شاشة التحميل الاحترافية (Skeleton)
+  // ============================================
+  if (loading) {
+    return (
+      <section className="relative w-full overflow-hidden bg-background">
+        {/* Skeleton للموبايل */}
+        <div className="lg:hidden relative w-full h-[75vh] min-h-[500px] overflow-hidden bg-zinc-900 animate-pulse flex flex-col justify-end p-6 pb-24">
+          <div className={cn("space-y-4 w-full", isRTL ? "items-end text-right flex flex-col" : "items-start text-left flex flex-col")}>
+            <div className="w-24 h-6 bg-zinc-800 rounded-full"></div>
+            <div className="w-3/4 h-10 bg-zinc-800 rounded-lg"></div>
+            <div className="w-1/2 h-10 bg-zinc-800 rounded-lg"></div>
+            <div className="w-full h-3 bg-zinc-800 rounded-full mt-2"></div>
+            <div className="w-5/6 h-3 bg-zinc-800 rounded-full"></div>
+            <div className="w-32 h-12 bg-zinc-800 rounded-full mt-4"></div>
+          </div>
+        </div>
+
+        {/* Skeleton للديسكتوب */}
+        <div className="hidden lg:block relative h-[650px] xl:h-[750px] w-full overflow-hidden bg-gray-50/50 dark:bg-zinc-950/50">
+          <div className="container mx-auto h-full grid lg:grid-cols-2 items-center gap-12 px-6">
+            
+            {/* الهيكل النصي */}
+            <div className={cn("order-2 lg:order-1 flex flex-col", isRTL ? "items-end" : "items-start")}>
+              <div className="w-32 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full animate-pulse mb-6"></div>
+              <div className="w-3/4 h-16 bg-gray-200 dark:bg-zinc-800 rounded-2xl animate-pulse mb-3"></div>
+              <div className="w-1/2 h-16 bg-gray-200 dark:bg-zinc-800 rounded-2xl animate-pulse mb-6"></div>
+              <div className="w-full h-4 bg-gray-200 dark:bg-zinc-800 rounded-full animate-pulse mb-3 mt-4"></div>
+              <div className="w-4/5 h-4 bg-gray-200 dark:bg-zinc-800 rounded-full animate-pulse mb-10"></div>
+              <div className="w-48 h-14 bg-gray-200 dark:bg-zinc-800 rounded-full animate-pulse"></div>
+            </div>
+
+            {/* هيكل إطار الصورة */}
+            <div className="order-1 lg:order-2 flex items-center justify-center lg:justify-end">
+              <div className="w-full max-w-[450px] xl:max-w-[520px] aspect-[4/5] rounded-[32px] bg-gray-200 dark:bg-zinc-800 animate-pulse flex items-center justify-center border-4 border-white/50 dark:border-zinc-800/50">
+                 <ImageIcon className="w-16 h-16 text-gray-300 dark:text-zinc-700 opacity-50" />
               </div>
             </div>
+            
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      </section>
+    )
+  }
 
-      {/* أزرار التحكم - تظهر فقط في الشاشات الكبيرة وعلى الهوفر */}
-      <div className="hidden lg:block opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <button
-          onClick={isRTL ? next : prev}
-          className={cn(
-            "absolute top-1/2 -translate-y-1/2 z-30 p-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full hover:bg-white hover:text-black transition-all",
-            "left-6 xl:left-10"
-          )}
-        >
-          <ChevronLeft className="w-6 h-6" strokeWidth={2} />
-        </button>
-        <button
-          onClick={isRTL ? prev : next}
-          className={cn(
-            "absolute top-1/2 -translate-y-1/2 z-30 p-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full hover:bg-white hover:text-black transition-all",
-            "right-6 xl:right-10"
-          )}
-        >
-          <ChevronRight className="w-6 h-6" strokeWidth={2} />
-        </button>
+  // في حالة عدم وجود صورة أو بيانات
+  if (!bannerData || !bannerData.image) {
+    return null;
+  }
+
+  // استخراج البيانات مع دعم اللغتين
+  const title = (isRTL ? bannerData.titleAr : bannerData.title) || ""
+  const subtitle = (isRTL ? bannerData.subtitleAr : bannerData.subtitle) || ""
+  const description = (isRTL ? bannerData.descriptionAr : bannerData.description) || ""
+  const buttonText = (isRTL ? bannerData.btnTextAr : bannerData.btnText) || "تسوق الآن"
+  const link = bannerData.link || "/shop"
+
+  return (
+    <section className="relative w-full overflow-hidden bg-background">
+      
+      {/* ============================================ */}
+      {/* نسخة الموبايل (صورة تملأ الشاشة مع تظليل سفلي) */}
+      {/* ============================================ */}
+      <div className="lg:hidden relative w-full h-[75vh] min-h-[500px] overflow-hidden bg-zinc-950">
+        <div className="relative h-full w-full flex-shrink-0 select-none">
+          <Image
+            src={bannerData.image}
+            alt={title}
+            fill
+            priority
+            className="object-cover object-center"
+            quality={90}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 flex flex-col justify-end p-6 pb-24 text-white pointer-events-none">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="space-y-4 rtl:text-right ltr:text-left pointer-events-auto"
+            >
+              {subtitle && (
+                <span className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full uppercase tracking-widest shadow-lg">
+                  {subtitle}
+                </span>
+              )}
+              {title && <h1 className="text-4xl font-black leading-tight drop-shadow-xl">{title}</h1>}
+              {description && <p className="text-sm text-gray-200 font-medium line-clamp-2">{description}</p>}
+              <div className="pt-2">
+                <Link href={link} className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full font-bold text-sm shadow-xl active:scale-95 transition-transform">
+                  {buttonText}
+                  <ArrowRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       </div>
 
-      {/* مؤشرات التنقل السفلية - تصميم أنيق وحديث */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2.5 items-center">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrent(index)}
-            className={cn(
-              "rounded-full transition-all duration-500",
-              index === current
-                ? "bg-white w-10 h-1.5 shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-                : "bg-white/40 w-2 h-2 hover:bg-white/60 hover:w-4"
-            )}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
+      {/* ============================================ */}
+      {/* نسخة الديسكتاب (الإطار الكلاسيكي الفخم) */}
+      {/* ============================================ */}
+      <div className="hidden lg:block relative h-[650px] xl:h-[750px] w-full overflow-hidden">
+        {/* خلفية متدرجة ناعمة للموقع */}
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/50 via-background to-background" />
+        
+        <div className="absolute inset-0">
+          <div className="container mx-auto h-full grid lg:grid-cols-2 items-center gap-12 px-6 relative z-10">
+            
+            {/* المحتوى النصي */}
+            <div className={cn("order-2 lg:order-1", isRTL ? "text-right" : "text-left")}>
+              <motion.div
+                initial={{ x: isRTL ? 50 : -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              >
+                {subtitle && (
+                  <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-bold rounded-full mb-6 uppercase tracking-widest">
+                    {subtitle}
+                  </span>
+                )}
+                
+                {title && (
+                  <h1 className="text-5xl xl:text-7xl font-black text-foreground leading-[1.1] mb-6">
+                    {title}
+                  </h1>
+                )}
+                
+                {description && (
+                  <p className="text-lg text-muted-foreground mb-10 max-w-lg leading-relaxed font-medium">
+                    {description}
+                  </p>
+                )}
+                
+                <div className="flex gap-4">
+                  <Link 
+                    href={link} 
+                    className="px-10 py-4 bg-primary text-white rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                  >
+                    {buttonText}
+                    <ArrowRight className={cn("w-5 h-5", isRTL && "rotate-180")} />
+                  </Link>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* إطار الصورة الكلاسيكي القديم */}
+            <div className="relative h-full w-full order-1 lg:order-2 flex items-center justify-center lg:justify-end">
+               {/* تأثير توهج خلف الإطار */}
+               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/10 rounded-full blur-3xl -z-10" />
+
+               <motion.div 
+                 initial={{ scale: 0.9, opacity: 0 }}
+                 animate={{ scale: 1, opacity: 1 }}
+                 transition={{ duration: 0.7, delay: 0.2 }}
+                 /* الإطار: مستطيل بزوايا دائرية، حدود بيضاء فخمة، وظل قوي لبروزه */
+                 className="relative w-full max-w-[450px] xl:max-w-[520px] aspect-[4/5] rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] border-4 border-white dark:border-gray-800 ring-1 ring-black/5"
+               >
+                <Image
+                  src={bannerData.image}
+                  alt={title || "Hero banner"}
+                  fill
+                  className="object-cover object-top hover:scale-105 transition-transform duration-700"
+                  priority
+                  quality={100}
+                />
+               </motion.div>
+            </div>
+
+          </div>
+        </div>
       </div>
     </section>
   )

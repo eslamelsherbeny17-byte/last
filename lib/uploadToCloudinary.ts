@@ -25,7 +25,6 @@ export async function uploadToCloudinary(
     formData.append('api_key', apiKey);
     formData.append('timestamp', timestamp);
 
-    // 👇 هنا كان الخطأ القاتل: التشفير الصح لا يجب أن يحتوي على cloud_name
     const strToSign = `timestamp=${timestamp}${apiSecret}`;
     
     const signature = crypto
@@ -49,9 +48,9 @@ export async function uploadToCloudinary(
     }
 
     const data = await response.json();
-    return data.secure_url; // ده الرابط السليم اللي هيرجع ويتحفظ في الداتا بيز
+    return data.secure_url;
   } catch (error) {
     console.error('🔥 Cloudinary upload error:', error);
-    throw error; // لازم نوقف العملية لو الصورة اترفضت عشان ميتحفظش مسار وهمي
+    throw error;
   }
 }

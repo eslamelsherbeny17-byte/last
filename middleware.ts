@@ -5,7 +5,8 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const { pathname } = request.nextUrl
 
-  const protectedRoutes = ['/profile', '/cart', '/checkout']
+  // 🎯 التعديل الجذري: شلنا /cart و /checkout عشان الموبايل ميطردكش
+  const protectedRoutes = ['/profile']
   const adminRoutes = ['/admin']
 
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
@@ -17,7 +18,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/admin/login', request.url))
   }
 
-  // مستخدم: لو route محمية ومفيش توكن روح login + callbackUrl
+  // مستخدم: لو route محمية ومفيش توكن روح login
   if (isProtectedRoute && !token) {
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', pathname)
@@ -28,10 +29,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // 🎯 التعديل الجذري: مسحنا المسارات بتاعت الدفع من المراقبة
   matcher: [
     '/profile/:path*',
-    '/cart',
-    '/checkout',
     '/admin/:path*',
   ],
 }

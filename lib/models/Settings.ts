@@ -19,6 +19,18 @@ const settingsSchema = new mongoose.Schema(
       type: [String], 
       default: ['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'] 
     },
+    heroBanner: {
+    image: String,
+    title: String,
+    titleAr: String,
+    subtitle: String,
+    subtitleAr: String,
+    description: String,
+    descriptionAr: String,
+    btnText: String,
+    btnTextAr: String,
+    link: String
+},
 
     freeShippingThreshold: { type: Number, default: 0 },
     shippingCost: { type: Number, default: 0 },

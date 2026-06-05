@@ -126,10 +126,9 @@ export default function RootLayout({
                   <AddressProvider>
                     <OrdersProvider>
                       
-                      {/* ✨ الناف بار والفوتر بقوا هنا، كدة هيفضلوا ثابتين في كل الموقع */}
-                      <Navbar />
+                      
                       <main className='min-h-screen'>{children}</main>
-                      <Footer />
+                      
                       
                       <Toaster 
                         position="bottom-right"

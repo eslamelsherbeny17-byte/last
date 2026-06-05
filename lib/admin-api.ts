@@ -348,14 +348,31 @@ export const adminCouponsAPI = {
 // ==================== SETTINGS API ====================
 export const adminSettingsAPI = {
   get: async () => {
-    const response = await adminAPI.get('/settings')
-    return normalizeResponse(response)
+    // ✨ لاحظ هنا: استخدمنا axios مباشرة لكي نرسل الطلب لـ Next.js وليس لسيرفر 8000
+    const response = await axios.get('/api/settings')
+    // إرجاع البيانات بالشكل الذي تفهمه لوحة التحكم
+    return response.data?.data ? response.data : { data: response.data }
   },
 
   update: async (data: any) => {
-    const response = await adminAPI.put('/settings', data)
-    return normalizeResponse(response)
+    // نجلب التوكن لإثبات هويتك كأدمن
+    const token = Cookies.get('token') || localStorage.getItem('token')
+    
+    // إرسال البيانات إلى Next.js مباشرة ليحفظها مع الصور
+    const response = await axios.put('/api/settings', data, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data?.data ? response.data : { data: response.data }
+  }, 
+  
+  uploadHeroImage: async (formData: FormData) => {
+    const token = Cookies.get('token') || localStorage.getItem('token')
+    const response = await axios.post('/api/settings/upload-hero', formData, {
+      headers: { 
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}` 
+      },
+    });
+    return response.data; 
   },
 }
-
-export default adminAPI

@@ -3,12 +3,12 @@ import dbConnect from '@/lib/db';
 import Setting from '@/lib/models/Settings';
 import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
 
-// ✨ منع الكاش نهائياً هنا كمان
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     await dbConnect();
+    // البحث عن الإعدادات أو إنشاء ملف إعدادات فارغ لأول مرة
     let settings = await Setting.findOne();
     
     if (!settings) {
@@ -35,8 +35,10 @@ export async function PUT(req: NextRequest) {
     await dbConnect();
     const body = await req.json();
 
+    // إزالة الحقول المحمية لتجنب تعارض MongoDB
     const { _id, createdAt, updatedAt, __v, ...updateData } = body;
 
+    // استخدام upsert لضمان إنشاء الملف لو تم مسحه بالخطأ
     const settings = await Setting.findOneAndUpdate(
       {}, 
       { $set: updateData },
