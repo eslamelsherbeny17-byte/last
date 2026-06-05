@@ -55,8 +55,7 @@ export async function GET(req: NextRequest) {
       query.$or = [
         { title: { $regex: arabicRegex, $options: 'i' } },
         { titleAr: { $regex: arabicRegex, $options: 'i' } },
-        { description: { $regex: arabicRegex, $options: 'i' } },
-        { descriptionAr: { $regex: arabicRegex, $options: 'i' } }
+       
       ];
     }
 

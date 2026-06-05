@@ -15,7 +15,7 @@ import type {
 } from './types'
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+   '/api'
 
 interface ProductQueryParams {
   page?: number
@@ -108,7 +108,8 @@ api.interceptors.response.use(
 )
 
 // ==================== PRODUCTS API ====================
-export const productsAPI = {
+
+ export const productsAPI = {
   getAll: async (params?: ProductQueryParams) => {
     const cleanParams: any = { ...params }
 
@@ -121,13 +122,13 @@ export const productsAPI = {
       delete cleanParams.priceMax
     }
 
+    // ✨✨ التصحيح هنا: يجب تمرير params داخل كائن { params: ... }
     const response = await api.get<PaginatedResponse<Product>>('/products', {
       params: cleanParams,
-      paramsSerializer: { indexes: null },
+      paramsSerializer: { indexes: null }, // مهم للفلاتر المتعددة
     })
     return response.data
   },
-
   getById: async (id: string) => {
     const response = await api.get<{ data: Product }>(`/products/${id}`)
     return response.data.data
