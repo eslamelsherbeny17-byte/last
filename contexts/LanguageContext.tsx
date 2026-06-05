@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, ReactNode } from "react"
+import { createContext, useContext, useState, ReactNode, useEffect } from "react" // 👈 أضفنا useEffect هنا
 import { translations, type TranslationKey } from "@/lib/translations"
 
 interface LanguageContextType {
@@ -13,27 +13,23 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  // ثابت دائماً على العربية
-  const language = "ar"
-  const direction = "rtl"
-  const isRTL = true
+  const language = "ar"; 
+  const isRTL = true;    
 
-  // تأكد من ضبط الـ Direction في الـ DOM عند التحميل
-  if (typeof document !== "undefined") {
-    document.documentElement.setAttribute("lang", "ar")
-    document.documentElement.setAttribute("dir", "rtl")
-    document.documentElement.style.fontFamily = "var(--font-cairo), sans-serif"
-  }
+  useEffect(() => {
+    // هذه الخطوة تضمن أن أي تغيير في التصميم أو اللغة يتم تطبيقه فوراً على مستوى الـ HTML
+    document.documentElement.lang = "ar";
+    document.documentElement.dir = "rtl";
+    document.documentElement.style.fontFamily = "var(--font-cairo), sans-serif";
+  }, []);
 
-  const t = (key: TranslationKey): string => {
-    return translations.ar[key] || key
-  }
+  const t = (key: TranslationKey): string => translations.ar[key] || key;
 
   return (
-    <LanguageContext.Provider value={{ language, direction, t, isRTL }}>
+    <LanguageContext.Provider value={{ language, direction: "rtl", t, isRTL }}>
       {children}
     </LanguageContext.Provider>
-  )
+  );
 }
 
 export const useLanguage = () => {
