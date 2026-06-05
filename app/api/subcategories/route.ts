@@ -8,18 +8,12 @@ import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-
-    // ✨ هنجيب الفئات الفرعية، ونعمل populate عشان نجيب اسم الفئة الأساسية المرتبطة بيها
     const subCategories = await SubCategory.find({}).populate('category', 'name').lean();
 
-    // حساب عدد المنتجات لكل فئة فرعية
     const subCategoriesWithCount = await Promise.all(
       subCategories.map(async (subCat) => {
         const productsCount = await Product.countDocuments({ subCategory: subCat._id });
-        return {
-          ...subCat,
-          productsCount
-        };
+        return { ...subCat, productsCount };
       })
     );
 
@@ -44,7 +38,8 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const name = formData.get('name') as string;
-    const categoryId = formData.get('categoryId') as string; // ✨ الـ ID بتاع الفئة الأساسية
+    // ✨ تأكد إن الواجهة الأمامية بتبعت الحقل باسم 'categoryId' بالظبط
+    const categoryId = formData.get('categoryId') as string; 
     const image = formData.get('image') as File;
 
     if (!name || !categoryId) {

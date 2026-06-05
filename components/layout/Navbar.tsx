@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { CartSheet } from '@/components/cart/CartSheet'
-import { ThemeToggle } from '@/components/ThemeToggle' // تأكد من أن هذا المكون يستخدم حل isMounted
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
@@ -30,7 +30,7 @@ export function Navbar() {
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth()
   const { itemsCount } = useCart()
   const { wishlist } = useWishlist()
-  const { t } = useLanguage() // ✨ لم نعد بحاجة إلى language و isRTL من هنا
+  const { t } = useLanguage() 
 
   const [isMounted, setIsMounted] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
@@ -51,7 +51,6 @@ export function Navbar() {
   const wishlistCount = wishlist.length
   const announcementIcons = [Sparkles, Tag, Zap, Gift, BellRing]
 
-  // ✨ تم تثبيت الروابط على اللغة العربية دائماً
   const navLinks = [
     { href: '/', label: 'الرئيسية' },
     { href: '/shop', label: 'المتجر', isShop: true },
@@ -113,7 +112,6 @@ export function Navbar() {
     e.preventDefault()
     if (isAdmin) return
     if (!isAuthenticated) {
-      // ✨ تم تثبيت الرسالة على العربية
       toast.error('سجّل الدخول للمتابعة')
       goLogin()
       return
@@ -123,30 +121,26 @@ export function Navbar() {
   }
 
   const ClientOnlyContent = () => {
-    if (!isMounted || authLoading) {
-      return (
-        <div className='flex items-center justify-end gap-1 sm:gap-2 w-full'>
-          <div className="h-9 w-9 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
-          <div className="h-9 w-9 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full hidden sm:block"></div>
-        </div>
-      );
-    }
-    
     return (
-      <>
-        <div className='hidden sm:block'>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='ghost' size='icon' className='rounded-full h-10 w-10 hover:bg-muted'>
-                {isAuthenticated ? (
-                  <Avatar className='h-8 w-8'><AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>{getUserInitials(user?.name)}</AvatarFallback></Avatar>
-                ) : (
-                  <User className='h-5 w-5 text-foreground/80' />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='start' sideOffset={8} className='w-60 z-[100] rounded-xl p-2'>
-              {isAuthenticated ? (
+      <div className="flex items-center gap-1 sm:gap-2">
+        {/* أيقونة الحساب: تظهر فوراً كأيقونة عادية، وتتحول للاسم/الصورة بعد التحميل */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='ghost' size='icon' className='rounded-full h-9 w-9 sm:h-10 sm:w-10 hover:bg-muted shrink-0'>
+              {isMounted && !authLoading && isAuthenticated ? (
+                <Avatar className='h-8 w-8 sm:h-9 sm:w-9'>
+                  <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>
+                    {getUserInitials(user?.name)}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <User className='h-5 w-5 text-foreground/80' />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end' sideOffset={8} className='w-60 z-[100] rounded-xl p-2'>
+            {isMounted && !authLoading ? (
+              isAuthenticated ? (
                 <>
                   <DropdownMenuLabel className="font-bold px-4 pt-3 pb-2">{user?.name}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -163,42 +157,37 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
-              )}
-              <div className="py-2 px-2 flex items-center justify-between mt-1">
-                <div className="flex items-center text-sm font-medium text-foreground/80"><MoonStar className="h-4 w-4 mx-2" />المظهر</div>
-                <ThemeToggle />
-              </div>
-              {isAuthenticated && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => logout()} className='text-red-500 focus:text-white focus:bg-red-500 py-2.5 cursor-pointer'><LogOut className='mx-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              )
+            ) : (
+              <div className="p-4 text-center text-sm text-muted-foreground">جاري التحميل...</div>
+            )}
+            
+            <div className="py-2 px-2 flex items-center justify-between mt-1">
+              <div className="flex items-center text-sm font-medium text-foreground/80"><MoonStar className="h-4 w-4 mx-2" />المظهر</div>
+              <ThemeToggle />
+            </div>
+            
+            {isMounted && isAuthenticated && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => logout()} className='text-red-500 focus:text-white focus:bg-red-500 py-2.5 cursor-pointer'><LogOut className='mx-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        {!isAdmin && (
-          <div className="flex items-center gap-0.5 sm:gap-1">
-            <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='hidden md:flex relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
-              <Heart className={cn('h-5 w-5 transition-colors', isAuthenticated && wishlistCount > 0 ? 'fill-red-500 text-red-500' : 'text-foreground/80')} />
-              {isAuthenticated && wishlistCount > 0 && (
-                <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-red-500 text-white flex items-center justify-center rounded-full text-[8px] sm:text-[9px] border-2 border-background'>
-                  {wishlistCount}
-                </Badge>
-              )}
-            </Button>
-            <Button onClick={handleOpenProtected('cart')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
-              <ShoppingCart className='h-5 w-5 text-foreground/80' />
-              {isAuthenticated && itemsCount > 0 && (
-                <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-primary text-primary-foreground flex items-center justify-center rounded-full text-[8px] sm:text-[9px] font-bold border-2 border-background'>
-                  {itemsCount}
-                </Badge>
-              )}
-            </Button>
-          </div>
+        {/* أيقونة السلة: تظهر فوراً دائماً، ورقم المشتريات يظهر فقط بعد التأكد من الحساب */}
+        {(!isMounted || !isAdmin) && (
+          <Button onClick={handleOpenProtected('cart')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted shrink-0'>
+            <ShoppingCart className='h-5 w-5 text-foreground/80' />
+            {isMounted && !authLoading && isAuthenticated && itemsCount > 0 && (
+              <Badge className='absolute top-0 right-0 h-4 w-4 p-0 bg-primary text-primary-foreground flex items-center justify-center rounded-full text-[9px] font-bold border-2 border-background'>
+                {itemsCount}
+              </Badge>
+            )}
+          </Button>
         )}
-      </>
+      </div>
     );
   }
 
@@ -228,15 +217,18 @@ export function Navbar() {
         )}
 
         <div className={cn('transition-all duration-300 border-b relative', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
-          <div className='container mx-auto px-3 sm:px-4 lg:px-8 flex h-14 sm:h-16 lg:h-20 items-center justify-between w-full relative'>
+          {/* flex-1 لتوزيع المساحات بشكل عادل */}
+          <div className='container mx-auto px-3 flex h-14 sm:h-16 items-center justify-between relative'>
             
-            <div className='flex items-center lg:hidden w-1/3'>
-              <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-ml-2 h-10 w-10'>
+            {/* 1. الجانب الأيمن: القائمة للموبايل */}
+            <div className='flex items-center flex-1 lg:hidden'>
+              <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-mr-2 h-10 w-10 shrink-0'>
                 <Menu className='h-6 w-6 text-foreground/80' />
               </Button>
             </div>
 
-            <div className='flex items-center justify-center lg:justify-start absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none lg:w-1/4'>
+            {/* 2. المنتصف: اللوجو */}
+            <div className='absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:justify-start shrink-0'>
               <Link href='/' className='flex-shrink-0'>
                 <span className='text-xl sm:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
                   {storeName}
@@ -244,6 +236,7 @@ export function Navbar() {
               </Link>
             </div>
 
+            {/* القائمة الخاصة بالديسكتوب */}
             <nav className='hidden lg:flex flex-1 items-center justify-center gap-6 xl:gap-8'>
               {navLinks.map((link) => {
                 const isActive = pathname === link.href || (link.isShop && (pathname.startsWith('/shop') || pathname.startsWith('/product')));
@@ -289,17 +282,19 @@ export function Navbar() {
               })}
             </nav>
 
-            <div className='flex items-center justify-end gap-1 sm:gap-2 w-1/3 lg:w-1/4'>
+            {/* 3. الجانب الأيسر: الأيقونات */}
+            <div className='flex items-center justify-end gap-1 sm:gap-2 flex-1'>
               <div className="hidden lg:block">
                 <NavSearch isMobile={false} language="ar" t={t} isRTL={true} />
               </div>
               
-              <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
+              <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 rounded-full hover:bg-muted shrink-0' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
                 <Search className='h-5 w-5 text-foreground/80' />
               </Button>
 
               <ClientOnlyContent />
             </div>
+
           </div>
         </div>
 

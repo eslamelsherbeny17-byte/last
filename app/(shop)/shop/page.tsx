@@ -31,20 +31,17 @@ function ShopContent() {
   const [sortBy, setSortBy] = useState('newest')
   const [activeFilters, setActiveFilters] = useState<any>({})
 
-  // ✅ إضافة map للتحويل من slug إلى ID
   const [categorySlugMap, setCategorySlugMap] = useState<{[key: string]: string}>({})
 
   const categoryParam = searchParams.get('category')
   const searchParam = searchParams.get('search')
   const saleParam = searchParams.get('sale')
 
-  // ✅ تعديل fetchCategories لإنشاء الـ map
   const fetchCategories = async () => {
     try {
       const data = await categoriesAPI.getAll()
       setCategories(data)
       
-      // ✅ إنشاء map من slug إلى ID
       const slugMap: {[key: string]: string} = {}
       data.forEach((cat: Category) => {
         slugMap[cat.slug] = cat._id
@@ -72,13 +69,11 @@ function ShopContent() {
   }, [])
 
   useEffect(() => {
-    // ✅ الانتظار حتى يتم تحميل الـ categories قبل fetch المنتجات
     if (Object.keys(categorySlugMap).length > 0 || !categoryParam) {
       fetchProducts()
     }
   }, [currentPage, sortBy, categoryParam, searchParam, saleParam, activeFilters, categorySlugMap])
 
-  // ✅ تعديل fetchProducts
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -87,18 +82,15 @@ function ShopContent() {
         limit: 12,
       };
 
-      // 1. الترتيب
       if (sortBy === 'price-low') params.sort = 'price';
       else if (sortBy === 'price-high') params.sort = '-price';
       else if (sortBy === 'newest') params.sort = '-createdAt';
       else if (sortBy === 'rating') params.sort = '-ratingsAverage';
       else if (sortBy === 'bestsellers') params.sort = '-sold';
 
-      // 2. ✅ الفلاتر الجانبية (الأولوية لها)
       if (activeFilters.category && activeFilters.category.length > 0) {
         params.category = activeFilters.category;
       } else if (categoryParam) {
-        // ✅ تحويل الـ slug إلى ID
         const categoryId = categorySlugMap[categoryParam]
         
         if (categoryId) {
@@ -106,7 +98,6 @@ function ShopContent() {
           params.category = categoryId
         } else {
           console.warn('⚠️ Category slug not found:', categoryParam)
-          // محاولة استخدام الـ slug مباشرة (في حال الـ API يدعمه)
           params.category = categoryParam
         }
       }
@@ -115,7 +106,6 @@ function ShopContent() {
       if (activeFilters.priceMin) params.priceMin = activeFilters.priceMin;
       if (activeFilters.priceMax) params.priceMax = activeFilters.priceMax;
 
-      // 3. حالة التخفيضات
       if (saleParam === 'true' || activeFilters.sale) {
         params.isDiscounted = 'true'; 
       }
@@ -133,11 +123,11 @@ function ShopContent() {
       setLoading(false);
     }
   };
-  // ✅ Handle Filter Change
+
   const handleFilterChange = useCallback((filters: any) => {
     console.log('🔄 Filter Changed:', filters)
     setActiveFilters(filters)
-    setCurrentPage(1) // Reset to first page
+    setCurrentPage(1)
   }, [])
 
   return (
@@ -181,59 +171,24 @@ function ShopContent() {
               </div>
 
               <div className='flex items-center gap-2 md:gap-3'>
-                {/* Sort */}
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className='w-full sm:w-[180px] h-9 md:h-10 text-xs md:text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white'>
                     <SelectValue placeholder={t('sortBy')} />
                   </SelectTrigger>
                   <SelectContent className='bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'>
-                    <SelectItem
-                      value='newest'
-                      className='dark:text-white dark:focus:bg-gray-700'
-                    >
-                      {t('newest')}
-                    </SelectItem>
-                    <SelectItem
-                      value='bestsellers'
-                      className='dark:text-white dark:focus:bg-gray-700'
-                    >
-                      {t('bestSellers')}
-                    </SelectItem>
-                    <SelectItem
-                      value='price-low'
-                      className='dark:text-white dark:focus:bg-gray-700'
-                    >
-                      {t('priceLowToHigh')}
-                    </SelectItem>
-                    <SelectItem
-                      value='price-high'
-                      className='dark:text-white dark:focus:bg-gray-700'
-                    >
-                      {t('priceHighToLow')}
-                    </SelectItem>
-                    <SelectItem
-                      value='rating'
-                      className='dark:text-white dark:focus:bg-gray-700'
-                    >
-                      {t('topRated')}
-                    </SelectItem>
+                    <SelectItem value='newest' className='dark:text-white dark:focus:bg-gray-700'>{t('newest')}</SelectItem>
+                    <SelectItem value='bestsellers' className='dark:text-white dark:focus:bg-gray-700'>{t('bestSellers')}</SelectItem>
+                    <SelectItem value='price-low' className='dark:text-white dark:focus:bg-gray-700'>{t('priceLowToHigh')}</SelectItem>
+                    <SelectItem value='price-high' className='dark:text-white dark:focus:bg-gray-700'>{t('priceHighToLow')}</SelectItem>
+                    <SelectItem value='rating' className='dark:text-white dark:focus:bg-gray-700'>{t('topRated')}</SelectItem>
                   </SelectContent>
                 </Select>
 
-                {/* View Toggle */}
                 <div className='hidden md:flex gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1 bg-white dark:bg-gray-800'>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='h-8 w-8 dark:hover:bg-gray-700'
-                  >
+                  <Button variant='ghost' size='icon' className='h-8 w-8 dark:hover:bg-gray-700'>
                     <Grid3x3 className='h-4 w-4 text-gray-700 dark:text-gray-300' />
                   </Button>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='h-8 w-8 dark:hover:bg-gray-700'
-                  >
+                  <Button variant='ghost' size='icon' className='h-8 w-8 dark:hover:bg-gray-700'>
                     <LayoutGrid className='h-4 w-4 text-gray-700 dark:text-gray-300' />
                   </Button>
                 </div>

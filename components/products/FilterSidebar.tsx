@@ -1,7 +1,7 @@
 'use client'
 
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -35,6 +35,7 @@ interface FilterState {
 }
 
 export function FilterSidebar({ categories, brands, onFilterChange }: any) {
+  const [isMounted, setIsMounted] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     brands: [],
@@ -51,9 +52,12 @@ export function FilterSidebar({ categories, brands, onFilterChange }: any) {
   const priceMinRef = useRef<HTMLInputElement>(null)
   const priceMaxRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   const activeFiltersCount = filters.categories.length + filters.brands.length
 
-  // مصفوفة اقتراحات الأسعار
   const priceSuggestions = [
     { label: '0 - 500', min: 0, max: 500 },
     { label: '500 - 1000', min: 500, max: 1000 },
@@ -111,9 +115,10 @@ export function FilterSidebar({ categories, brands, onFilterChange }: any) {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }, [])
 
+  if (!isMounted) return null
+
   const FilterContent = () => (
     <div className='space-y-6 text-foreground p-1'>
-      {/* Header - تكبير العنوان الرئيسي */}
       <div className='flex items-center justify-between sticky top-0 bg-card z-10 pb-4'>
         <div className='flex items-center gap-3'>
           <SlidersHorizontal className='h-6 w-6 text-primary' />
@@ -128,7 +133,6 @@ export function FilterSidebar({ categories, brands, onFilterChange }: any) {
 
       <Separator className='bg-border' />
 
-      {/* Price Section - تكبير العناوين والحقول */}
       <Collapsible open={openSections.price} onOpenChange={() => toggleSection('price')}>
         <CollapsibleTrigger className='flex items-center justify-between w-full py-3 hover:text-primary transition-colors'>
           <div className='flex items-center gap-3'>
@@ -174,7 +178,6 @@ export function FilterSidebar({ categories, brands, onFilterChange }: any) {
 
       <Separator className='bg-border' />
 
-      {/* Categories Section - تكبير الخطوط والتشيك بوكس */}
       {categories?.length > 0 && (
         <>
           <Collapsible open={openSections.categories} onOpenChange={() => toggleSection('categories')}>
@@ -201,7 +204,7 @@ export function FilterSidebar({ categories, brands, onFilterChange }: any) {
                         checked={filters.categories.includes(cat._id)} 
                         onCheckedChange={(checked) => handleCategoryChange(cat._id, checked === true)} 
                         onClick={(e) => e.stopPropagation()} 
-                        className="h-5 w-5" // تكبير مربع الاختيار
+                        className="h-5 w-5" 
                       />
                       <label className='text-lg cursor-pointer flex-1 select-none font-medium'>{cat.nameAr || cat.name}</label>
                     </div>
@@ -214,7 +217,6 @@ export function FilterSidebar({ categories, brands, onFilterChange }: any) {
         </>
       )}
 
-      {/* Action Buttons - تكبير الأزرار والنصوص بداخلها */}
       <div className='space-y-3 pt-3'>
         <Button className='w-full h-14 gold-gradient text-white shadow-md hover:opacity-90 transition-all gap-3 text-xl font-bold' onClick={applyFilters}>
           تطبيق الفلاتر
@@ -255,14 +257,15 @@ export function FilterSidebar({ categories, brands, onFilterChange }: any) {
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent side='right' className='bg-card w-full sm:w-[420px] p-0 rounded-l-3xl'>
-          <SheetHeader className='p-8 border-b sticky top-0 bg-card z-10'>
-            <SheetTitle className='flex items-center gap-3 text-2xl'>
+        {/* التعديل الجذري هنا لظبط عرض الموبايل */}
+        <SheetContent side='right' className='bg-card w-[85vw] sm:w-[420px] p-0 rounded-l-3xl border-l-0 shadow-2xl'>
+          <SheetHeader className='p-6 border-b sticky top-0 bg-card z-10'>
+            <SheetTitle className='flex items-center gap-3 text-2xl font-bold'>
                <SlidersHorizontal className='h-7 w-7 text-primary' />
                تصفية المنتجات
             </SheetTitle>
           </SheetHeader>
-          <ScrollArea className='h-[calc(100vh-6rem)] p-8'>
+          <ScrollArea className='h-[calc(100vh-5rem)] p-6'>
             <FilterContent />
           </ScrollArea>
         </SheetContent>

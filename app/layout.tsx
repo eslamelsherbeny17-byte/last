@@ -48,13 +48,13 @@ export async function generateMetadata(): Promise<Metadata> {
     const settings = response?.data;
 
     // استخراج البيانات أو استخدام قيم افتراضية قوية لو الإعدادات فاضية
-    const siteName = settings?.siteName || "بسمه ستور";
+    const siteName = settings?.siteName || " Velora Style store ";
     const description = settings?.description || "متجر إلكتروني متكامل لتسوق أفضل المنتجات بأعلى جودة.";
 
     return {
       title: {
         default: siteName,
-        template: `%s | ${siteName}`, // هيخلي الصفحات التانية تظهر كده: "عربة التسوق | بسمه ستور"
+        template: `%s | ${siteName}`, 
       },
       description: description,
       keywords: settings?.keywords || [siteName, "تسوق", "متجر", "أونلاين"],
@@ -70,8 +70,8 @@ export async function generateMetadata(): Promise<Metadata> {
     // في حالة فشل الاتصال بالسيرفر، نرجع بيانات احتياطية عشان الـ SEO ميقعش
     return {
       title: {
-        default: "بسمه ستور",
-        template: "%s | بسمه ستور",
+        default: "Velora Style store",
+        template: "%s | Velora Style store",
       },
       description: "متجر إلكتروني متكامل لتسوق أفضل المنتجات.",
     }
