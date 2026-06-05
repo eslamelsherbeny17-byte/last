@@ -33,7 +33,7 @@ export const translations = {
     strong: 'قوية',
 
     // Navbar
-    brandName: 'ايمن بشير',
+    brandName: '',
     search: 'ابحث عن منتجات...',
     login: 'تسجيل الدخول',
     logout: 'تسجيل الخروج',
@@ -278,7 +278,7 @@ export const translations = {
     signup: 'Sign Up',
     logout: 'Logout',
     categories: 'Categories',
-    brandName: 'Ayman Besher',
+    brandName: '',
     search: 'Search products...',
     searchProducts: 'Search products...',
     loading: 'Loading...',

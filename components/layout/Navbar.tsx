@@ -37,16 +37,32 @@ export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   
-  const [storeName, setStoreName] = useState('')
-  const [categories, setCategories] = useState<any[]>([])
-  const [announcements, setAnnouncements] = useState<string[]>([])
+  // 🎯 التعديل السحري: قراءة البيانات من الذاكرة المحلية (Cache) فوراً قبل ما السيرفر يرد
+  const [storeName, setStoreName] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('cached_storeName') || t('brandName')
+    return t('brandName')
+  })
+  const [categories, setCategories] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('cached_categories')
+      return cached ? JSON.parse(cached) : []
+    }
+    return []
+  })
+  const [announcements, setAnnouncements] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('cached_announcements')
+      return cached ? JSON.parse(cached) : []
+    }
+    return []
+  })
+  
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0)
 
   const isAdmin = user?.role === 'admin'
   const wishlistCount = wishlist.length
   const announcementIcons = [Sparkles, Tag, Zap, Gift, BellRing]
 
-  // الروابط الأساسية (ثابتة وتظهر فوراً بدون تحميل)
   const navLinks = [
     { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
     { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
@@ -62,7 +78,7 @@ export function Navbar() {
     return () => clearInterval(timer)
   }, [announcements.length])
 
-  // جلب البيانات في صمت (بدون إيقاف عرض الناف بار)
+  // جلب البيانات من الداتابيز بصمت لتحديث الذاكرة في الخلفية
   useEffect(() => {
     const fetchDynamicData = async () => {
       try {
@@ -70,15 +86,20 @@ export function Navbar() {
         const data = settingsRes.data?.data
         
         if (data) {
-          setStoreName(data.siteName || t('brandName'))
+          const newStoreName = data.siteName || t('brandName')
+          setStoreName(newStoreName)
+          localStorage.setItem('cached_storeName', newStoreName) // تحديث الكاش
+
           if (data.announcements && data.announcements.length > 0) {
             setAnnouncements(data.announcements)
+            localStorage.setItem('cached_announcements', JSON.stringify(data.announcements))
           }
         }
-
         const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
-        setCategories(categoriesRes.data?.data || [])
-
+        const fetchedCategories = categoriesRes.data?.data || []
+        setCategories(fetchedCategories)
+        localStorage.setItem('cached_categories', JSON.stringify(fetchedCategories))
+        
       } catch (error) {
         console.error("Error fetching dynamic nav data", error)
       }
@@ -142,27 +163,29 @@ export function Navbar() {
           </div>
         )}
 
-        <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
-          <div className='container mx-auto px-2 sm:px-4 lg:px-8 flex h-14 sm:h-16 lg:h-20 items-center w-full'>
+        <div className={cn('transition-all duration-300 border-b relative', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
+          <div className='container mx-auto px-3 sm:px-4 lg:px-8 flex h-14 sm:h-16 lg:h-20 items-center justify-between w-full relative'>
             
-            <div className='flex flex-1 items-center justify-start gap-1 sm:gap-3'>
-              <div className='lg:hidden'>
-                <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-ml-1 sm:-ml-2 h-9 w-9 sm:h-10 sm:w-10'>
-                  <Menu className='h-5 w-5 sm:h-6 sm:w-6 text-foreground/80' />
-                </Button>
-              </div>
+            {/* القائمة الجانبية للموبايل */}
+            <div className='flex items-center lg:hidden w-1/3'>
+              <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-ml-2 h-10 w-10'>
+                <Menu className='h-6 w-6 text-foreground/80' />
+              </Button>
+            </div>
 
+            {/* اللوجو / اسم المتجر */}
+            <div className='flex items-center justify-center lg:justify-start absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none lg:w-1/4'>
               <Link href='/' className='flex-shrink-0'>
                 <span className='text-xl sm:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
-                  {storeName || t('brandName')}
+                  {storeName}
                 </span>
               </Link>
             </div>
 
-            <nav className='hidden lg:flex shrink-0 items-center justify-center gap-6 xl:gap-8'>
+            {/* روابط الديسكتوب */}
+            <nav className='hidden lg:flex flex-1 items-center justify-center gap-6 xl:gap-8'>
               {navLinks.map((link) => {
                 const isActive = pathname === link.href || (link.isShop && (pathname.startsWith('/shop') || pathname.startsWith('/product')));
-                
                 return (
                   <div key={link.label} className='relative group py-6'>
                     {link.isShop ? (
@@ -180,9 +203,7 @@ export function Navbar() {
                         </span>
                       </Link>
                     )}
-                    
                     {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-lg' />}
-                    
                     {link.isShop && categories.length > 0 && (
                       <div className={cn(
                         'absolute top-full mt-0 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50',
@@ -190,19 +211,12 @@ export function Navbar() {
                       )}>
                         <div className='bg-background border border-border rounded-xl shadow-xl p-2.5 flex flex-col'>
                           {categories.slice(0, 5).map((cat) => (
-                            <Link 
-                              key={cat._id} 
-                              href={`/shop?category=${cat.slug || cat._id}`} 
-                              className='px-4 py-2.5 text-[14px] font-medium rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors'
-                            >
+                            <Link key={cat._id} href={`/shop?category=${cat.slug || cat._id}`} className='px-4 py-2.5 text-[14px] font-medium rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors'>
                               {cat.name}
                             </Link>
                           ))}
                           <div className='h-px bg-border mx-2 my-1.5'></div>
-                          <Link 
-                            href="/shop" 
-                            className='px-4 py-2.5 text-[14px] font-bold rounded-lg hover:bg-primary/5 text-primary transition-colors flex items-center justify-between group/btn'
-                          >
+                          <Link href="/shop" className='px-4 py-2.5 text-[14px] font-bold rounded-lg hover:bg-primary/5 text-primary transition-colors flex items-center justify-between group/btn'>
                             {language === 'ar' ? 'عرض كل المنتجات' : 'View All Products'}
                             <ArrowRight className={cn("h-4 w-4 transition-transform group-hover/btn:translate-x-1", isRTL && "rotate-180 group-hover/btn:-translate-x-1")} />
                           </Link>
@@ -214,9 +228,11 @@ export function Navbar() {
               })}
             </nav>
 
-            <div className='flex flex-1 items-center justify-end gap-0.5 sm:gap-2 lg:gap-3'>
+            {/* الأيقونات */}
+            <div className='flex items-center justify-end gap-1 sm:gap-2 w-1/3 lg:w-1/4'>
               <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
-              <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
+              
+              <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
                 <Search className='h-5 w-5 text-foreground/80' />
               </Button>
 
@@ -233,9 +249,7 @@ export function Navbar() {
                         <Button variant='ghost' size='icon' className='rounded-full h-10 w-10 hover:bg-muted'>
                           {isAuthenticated ? (
                             <Avatar className='h-8 w-8'>
-                              <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>
-                                {getUserInitials(user?.name)}
-                              </AvatarFallback>
+                              <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>{getUserInitials(user?.name)}</AvatarFallback>
                             </Avatar>
                           ) : (
                             <User className='h-5 w-5 text-foreground/80' />
@@ -256,22 +270,19 @@ export function Navbar() {
                           <>
                             <DropdownMenuItem onClick={() => router.push('/login')} className="py-2.5 cursor-pointer font-bold text-primary bg-primary/5 rounded-lg mb-1">
                               <UserCircle className='mr-2 h-4 w-4' />
-                              {language === 'ar' ? 'تسجيل الدخول / إنشاء حساب' : 'Login / Register'}
+                              {language === 'ar' ? 'تسجيل الدخول / حساب جديد' : 'Login / Register'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                           </>
                         )}
                         <div className="py-2 px-2 flex items-center justify-between mt-1 bg-muted/30 rounded-lg">
-                          <div className="flex items-center text-sm font-medium text-foreground/80">
-                            <MoonStar className="h-4 w-4 mr-2" />
-                            {language === 'ar' ? 'المظهر' : 'Theme'}
-                          </div>
+                          <div className="flex items-center text-sm font-medium text-foreground/80"><MoonStar className="h-4 w-4 mr-2" />{language === 'ar' ? 'المظهر' : 'Theme'}</div>
                           <ThemeToggle />
                         </div>
                         {isAuthenticated && (
                           <>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => logout()} className='text-red-500 py-2.5 cursor-pointer focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30'><LogOut className='mr-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => logout()} className='text-red-500 py-2.5 cursor-pointer'><LogOut className='mr-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
                           </>
                         )}
                       </DropdownMenuContent>
@@ -280,10 +291,10 @@ export function Navbar() {
 
                   {!isAdmin && (
                     <div className="flex items-center gap-0.5 sm:gap-1">
-                      <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
+                      <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='hidden sm:flex relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
                         <Heart className={cn('h-5 w-5 transition-colors', isAuthenticated && wishlistCount > 0 ? 'fill-red-500 text-red-500' : 'text-foreground/80')} />
                         {isAuthenticated && wishlistCount > 0 && (
-                          <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-red-500 hover:bg-red-600 text-white flex items-center justify-center rounded-full text-[8px] sm:text-[9px] border-2 border-background'>
+                          <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-red-500 text-white flex items-center justify-center rounded-full text-[8px] sm:text-[9px] border-2 border-background'>
                             {wishlistCount}
                           </Badge>
                         )}
@@ -291,7 +302,7 @@ export function Navbar() {
                       <Button onClick={handleOpenProtected('cart')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
                         <ShoppingCart className='h-5 w-5 text-foreground/80' />
                         {isAuthenticated && itemsCount > 0 && (
-                          <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center rounded-full text-[8px] sm:text-[9px] font-bold border-2 border-background'>
+                          <Badge className='absolute top-1 sm:top-1.5 right-1 sm:right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 p-0 bg-primary text-primary-foreground flex items-center justify-center rounded-full text-[8px] sm:text-[9px] font-bold border-2 border-background'>
                             {itemsCount}
                           </Badge>
                         )}

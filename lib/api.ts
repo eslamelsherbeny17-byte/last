@@ -303,11 +303,12 @@ export const wishlistAPI = {
 }
 
 // ==================== ORDERS API ====================
-export const ordersAPI = {
-  createCashOrder: async (cartId: string, shippingAddress: any) => {
-    const response = await api.post(`/orders/${cartId}`, { shippingAddress })
+export const ordersAPI = {// عدل هذا السطر في lib/api.ts
+createCashOrder: async (cartId: string, shippingAddress: any) => {
+    // 🎯 أرسل الطلب للمسار الأساسي /orders وليس /orders/cartId
+    const response = await api.post(`/orders`, { cartId, shippingAddress })
     return response.data
-  },
+},
   getUserOrders: async () => {
     const response = await api.get<{ data: any[] }>('/orders')
     return response.data.data || []

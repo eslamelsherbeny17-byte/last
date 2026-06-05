@@ -100,35 +100,46 @@ export default function CheckoutPage() {
     if (currentStep < 3) setCurrentStep(currentStep + 1)
   }
 
-  const handlePlaceOrder = async () => {
-    try {
-      setLoading(true)
-      let shippingAddress: any
+ const handlePlaceOrder = async () => {
+  setLoading(true);
+  try {
+    let shippingAddress: any;
+    // ... (نفس كود جلب العنوان الخاص بك) ...
+    if (addressMode === 'saved') {
+      const addr = addresses.find(a => a._id === selectedAddressId);
+      shippingAddress = { details: addr?.details, phone: addr?.phone, city: addr?.city, postalCode: addr?.postalCode || '00000' };
+    } else {
+      shippingAddress = { details: shippingInfo.address, phone: shippingInfo.phone, city: shippingInfo.city, postalCode: shippingInfo.postalCode || '00000' };
+    }
 
-      if (addressMode === 'saved') {
-        const addr = addresses.find(a => a._id === selectedAddressId)
-        shippingAddress = { details: addr?.details, phone: addr?.phone, city: addr?.city, postalCode: addr?.postalCode || '00000' }
+    if (paymentMethod === 'cash') {
+      const res = await ordersAPI.createCashOrder(cart!._id, shippingAddress);
+      
+      // 1. تفريغ السلة فوراً
+      await refreshCart();
+      
+      // 2. إظهار رسالة النجاح
+      toast({ title: t('success'), description: t('orderPlacedSuccessfully') });
+      
+      // 3. التحويل لصفحة النجاح
+      if (res && res.data && res.data._id) {
+        router.push(`/order-success?orderId=${res.data._id}`);
       } else {
-        shippingAddress = { details: shippingInfo.address, phone: shippingInfo.phone, city: shippingInfo.city, postalCode: shippingInfo.postalCode || '00000' }
-        if (saveNewAddress) await addAddress({ alias: shippingInfo.alias, city: shippingInfo.city, phone: shippingInfo.phone, details: shippingInfo.address, postalCode: shippingInfo.postalCode })
+        // لو مفيش ID، روح للصفحة بدون ID
+        router.push('/order-success');
       }
-
-      if (paymentMethod === 'cash') {
-        const order = await ordersAPI.createCashOrder(cart!._id, shippingAddress)
-        
-        // 🎯 السر الثاني: مسح الأرقام والمنتجات بمجرد نجاح الطلب
-        await refreshCart()
-
-        toast({ title: t('success'), description: t('orderPlacedSuccessfully') })
-        router.push(`/order-success?orderId=${order.data._id}`)
-      } else if (paymentMethod === 'card') {
-        const session = await ordersAPI.getCheckoutSession(cart!._id, shippingAddress)
-        if (session.session?.url) window.location.href = session.session.url
-      }
-    } catch (error: any) {
-      toast({ title: t('error'), description: error.response?.data?.message || t('orderFailed'), variant: 'destructive' })
-    } finally { setLoading(false) }
+    }
+  } catch (error: any) {
+    console.error("خطأ الطلب:", error);
+    toast({ 
+      title: t('error'), 
+      description: error.response?.data?.message || "حدث خطأ أثناء إتمام الطلب", 
+      variant: 'destructive' 
+    });
+  } finally {
+    setLoading(false);
   }
+};
 
   const cartSummary = {
     subtotal: cart?.totalCartPrice || 0,
