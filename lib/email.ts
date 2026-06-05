@@ -12,9 +12,8 @@ export const sendEmail = async (options: { email: string; subject: string; messa
   });
 
   // ✅ حل مشكلة undefined بإضافة اسم افتراضي (Fallback)
-  const senderName = process.env.FROM_NAME || 'أيمن بشير';
+  const senderName = process.env.FROM_NAME || 'Velora Style';
   const senderEmail = process.env.EMAIL_USER;
-
   const mailOptions = {
     from: `"${senderName}" <${senderEmail}>`, // الشكل الصحيح لاسم المرسل
     to: options.email,

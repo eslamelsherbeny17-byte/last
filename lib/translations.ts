@@ -33,7 +33,7 @@ export const translations = {
     strong: 'قوية',
 
     // Navbar
-    brandName: '',
+    brandName: 'Velora Style',
     search: 'ابحث عن منتجات...',
     login: 'تسجيل الدخول',
     logout: 'تسجيل الخروج',
@@ -111,7 +111,7 @@ export const translations = {
     phoneNumber: '01234567890',
     emailAddress: 'info@aymanbasher.com',
     enterEmail: 'أدخل بريدك الإلكتروني',
-    copyright: '© 2024 أيمن بشير. جميع الحقوق محفوظة.',
+    copyright: '© 2024 Velora Style. جميع الحقوق محفوظة.',
     visa: 'فيزا',
     mastercard: 'ماستر كارد',
     paypal: 'بايبال',
@@ -174,7 +174,7 @@ export const translations = {
     phone: 'رقم الهاتف',
     optional: 'اختياري',
     welcomeBack: 'مرحباً بعودتك',
-    welcomeMessage: 'مرحباً بك في متجر أيمن بشير',
+    welcomeMessage: 'مرحباً بك في متجر Velora Style',
     forgotPassword: 'نسيت كلمة المرور؟',
     or: 'أو',
     dontHaveAccount: 'ليس لديك حساب؟',

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
                 
                 <tr>
                   <td style="background-color: #d4af37; padding: 30px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1px;">أيمن بشير</h1>
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1px;">Velora Style</h1>
                   </td>
                 </tr>
                 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     try {
       await sendEmail({
         email: email,
-        subject: 'رمز استعادة كلمة المرور - متجر أيمن بشير',
+        subject: 'رمز استعادة كلمة المرور - متجر Velora Style',
         message: emailTemplate
       });
     } catch (emailError) {

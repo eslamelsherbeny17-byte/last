@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const settingsSchema = new mongoose.Schema(
   {
-    siteName: { type: String, default: 'متجر أيمن بشير' },
+    siteName: { type: String, default: 'متجر Velora Style' },
     siteDescription: { type: String, default: 'متجر متخصص في الأزياء الإسلامية العصرية' },
     email: { type: String, default: '' },
     phone: { type: String, default: '' },

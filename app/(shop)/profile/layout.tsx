@@ -1,7 +1,7 @@
 import { ProfileSidebar } from '@/components/profile/ProfileSidebar'
 
 export const metadata = {
-  title: 'حسابي - أيمن بشير',
+  title: 'حسابي - Velora Style',
   description: 'إدارة حسابك وطلباتك',
 }
 
