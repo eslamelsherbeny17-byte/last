@@ -123,58 +123,60 @@ export function Navbar() {
   const ClientOnlyContent = () => {
     return (
       <div className="flex items-center gap-1 sm:gap-2">
-        {/* أيقونة الحساب: تظهر فوراً كأيقونة عادية، وتتحول للاسم/الصورة بعد التحميل */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='ghost' size='icon' className='rounded-full h-9 w-9 sm:h-10 sm:w-10 hover:bg-muted shrink-0'>
-              {isMounted && !authLoading && isAuthenticated ? (
-                <Avatar className='h-8 w-8 sm:h-9 sm:w-9'>
-                  <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>
-                    {getUserInitials(user?.name)}
-                  </AvatarFallback>
-                </Avatar>
+        {/* أيقونة الحساب: مخفية في الموبايل وتظهر في الشاشات الأكبر (الكمبيوتر/التابلت) */}
+        <div className="hidden sm:block">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='ghost' size='icon' className='rounded-full h-9 w-9 sm:h-10 sm:w-10 hover:bg-muted shrink-0'>
+                {isMounted && !authLoading && isAuthenticated ? (
+                  <Avatar className='h-8 w-8 sm:h-9 sm:w-9'>
+                    <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>
+                      {getUserInitials(user?.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <User className='h-5 w-5 text-foreground/80' />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' sideOffset={8} className='w-60 z-[100] rounded-xl p-2'>
+              {isMounted && !authLoading ? (
+                isAuthenticated ? (
+                  <>
+                    <DropdownMenuLabel className="font-bold px-4 pt-3 pb-2">{user?.name}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push('/profile')} className="py-2.5 cursor-pointer"><UserCircle className='mx-2 h-4 w-4' />{t('profile')}</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/profile/orders')} className="py-2.5 cursor-pointer"><Package className='mx-2 h-4 w-4' />{t('orders')}</DropdownMenuItem>
+                    {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className='text-primary py-2.5 cursor-pointer'><Crown className='mx-2 h-4 w-4' />{t('adminPanel')}</DropdownMenuItem>}
+                    <DropdownMenuSeparator />
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={goLogin} className="py-2.5 cursor-pointer font-bold text-primary bg-primary/5 rounded-lg mb-1">
+                      <UserCircle className='mx-2 h-4 w-4' />
+                      تسجيل الدخول / حساب جديد
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )
               ) : (
-                <User className='h-5 w-5 text-foreground/80' />
+                <div className="p-4 text-center text-sm text-muted-foreground">جاري التحميل...</div>
               )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end' sideOffset={8} className='w-60 z-[100] rounded-xl p-2'>
-            {isMounted && !authLoading ? (
-              isAuthenticated ? (
+              
+              <div className="py-2 px-2 flex items-center justify-between mt-1">
+                <div className="flex items-center text-sm font-medium text-foreground/80"><MoonStar className="h-4 w-4 mx-2" />المظهر</div>
+                <ThemeToggle />
+              </div>
+              
+              {isMounted && isAuthenticated && (
                 <>
-                  <DropdownMenuLabel className="font-bold px-4 pt-3 pb-2">{user?.name}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/profile')} className="py-2.5 cursor-pointer"><UserCircle className='mx-2 h-4 w-4' />{t('profile')}</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/profile/orders')} className="py-2.5 cursor-pointer"><Package className='mx-2 h-4 w-4' />{t('orders')}</DropdownMenuItem>
-                  {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className='text-primary py-2.5 cursor-pointer'><Crown className='mx-2 h-4 w-4' />{t('adminPanel')}</DropdownMenuItem>}
-                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => logout()} className='text-red-500 focus:text-white focus:bg-red-500 py-2.5 cursor-pointer'><LogOut className='mx-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
                 </>
-              ) : (
-                <>
-                  <DropdownMenuItem onClick={goLogin} className="py-2.5 cursor-pointer font-bold text-primary bg-primary/5 rounded-lg mb-1">
-                    <UserCircle className='mx-2 h-4 w-4' />
-                    تسجيل الدخول / حساب جديد
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )
-            ) : (
-              <div className="p-4 text-center text-sm text-muted-foreground">جاري التحميل...</div>
-            )}
-            
-            <div className="py-2 px-2 flex items-center justify-between mt-1">
-              <div className="flex items-center text-sm font-medium text-foreground/80"><MoonStar className="h-4 w-4 mx-2" />المظهر</div>
-              <ThemeToggle />
-            </div>
-            
-            {isMounted && isAuthenticated && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()} className='text-red-500 focus:text-white focus:bg-red-500 py-2.5 cursor-pointer'><LogOut className='mx-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         {/* أيقونة السلة: تظهر فوراً دائماً، ورقم المشتريات يظهر فقط بعد التأكد من الحساب */}
         {(!isMounted || !isAdmin) && (
@@ -227,8 +229,8 @@ export function Navbar() {
               </Button>
             </div>
 
-            {/* 2. المنتصف: اللوجو */}
-            <div className='absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:justify-start shrink-0'>
+            {/* 2. المنتصف: اللوجو (تم تثبيته في المنتصف بدقة للموبايل) */}
+            <div className='absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none flex items-center justify-center lg:justify-start shrink-0 z-10'>
               <Link href='/' className='flex-shrink-0'>
                 <span className='text-xl sm:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
                   {storeName}
