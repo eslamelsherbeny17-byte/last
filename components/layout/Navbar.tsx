@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { CartSheet } from '@/components/cart/CartSheet'
-import { ThemeToggle } from '@/components/ThemeToggle'
+
 import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
@@ -277,7 +277,7 @@ export function Navbar() {
                         )}
                         <div className="py-2 px-2 flex items-center justify-between mt-1 bg-muted/30 rounded-lg">
                           <div className="flex items-center text-sm font-medium text-foreground/80"><MoonStar className="h-4 w-4 mr-2" />{language === 'ar' ? 'المظهر' : 'Theme'}</div>
-                          <ThemeToggle />
+                          
                         </div>
                         {isAuthenticated && (
                           <>
