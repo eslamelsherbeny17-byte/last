@@ -37,9 +37,7 @@ export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   
-  const [isNavLoading, setIsNavLoading] = useState(true)
   const [storeName, setStoreName] = useState('')
-  const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [announcements, setAnnouncements] = useState<string[]>([])
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0)
@@ -47,6 +45,14 @@ export function Navbar() {
   const isAdmin = user?.role === 'admin'
   const wishlistCount = wishlist.length
   const announcementIcons = [Sparkles, Tag, Zap, Gift, BellRing]
+
+  // الروابط الأساسية (ثابتة وتظهر فوراً بدون تحميل)
+  const navLinks = [
+    { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
+    { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
+    { href: '/shop?sort=bestsellers', label: language === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers' }, 
+    { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
+  ]
 
   useEffect(() => {
     if (announcements.length <= 1) return
@@ -56,10 +62,10 @@ export function Navbar() {
     return () => clearInterval(timer)
   }, [announcements.length])
 
+  // جلب البيانات في صمت (بدون إيقاف عرض الناف بار)
   useEffect(() => {
     const fetchDynamicData = async () => {
       try {
-        setIsNavLoading(true)
         const settingsRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/settings`)
         const data = settingsRes.data?.data
         
@@ -67,43 +73,18 @@ export function Navbar() {
           setStoreName(data.siteName || t('brandName'))
           if (data.announcements && data.announcements.length > 0) {
             setAnnouncements(data.announcements)
-          } else {
-            setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
           }
-        } else {
-          setStoreName(t('brandName'))
-          setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
         }
 
         const categoriesRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
-        const fetchedCategories = categoriesRes.data?.data || []
-        
-        setCategories(fetchedCategories)
+        setCategories(categoriesRes.data?.data || [])
 
-        const baseLinks = [
-          { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
-          { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
-          { href: '/shop?sort=bestsellers', label: language === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers' }, 
-          { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
-        ]
-
-        setDynamicNavLinks(baseLinks)
       } catch (error) {
         console.error("Error fetching dynamic nav data", error)
-        setStoreName(t('brandName'))
-        setAnnouncements(['شحن مجاني للطلبات فوق 500 جنيه', 'خصم 20% على جميع المنتجات'])
-        setDynamicNavLinks([
-          { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
-          { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
-          { href: '/shop?sort=bestsellers', label: language === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers' },
-          { href: '/shop?sale=true', label: language === 'ar' ? 'التخفيضات' : 'Sale', special: true },
-        ])
-      } finally {
-        setIsNavLoading(false)
       }
     }
     fetchDynamicData()
-  }, [language])
+  }, [language, t])
 
   const handleScroll = useCallback(() => setIsScrolled(window.scrollY > 10), [])
   useEffect(() => {
@@ -172,75 +153,65 @@ export function Navbar() {
               </div>
 
               <Link href='/' className='flex-shrink-0'>
-                {isNavLoading ? (
-                  <div className="h-6 sm:h-8 w-20 sm:w-28 bg-muted/60 animate-pulse rounded-lg"></div>
-                ) : (
-                  <span className='text-xl sm:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
-                    {storeName}
-                  </span>
-                )}
+                <span className='text-xl sm:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
+                  {storeName || t('brandName')}
+                </span>
               </Link>
             </div>
 
             <nav className='hidden lg:flex shrink-0 items-center justify-center gap-6 xl:gap-8'>
-              {isNavLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-5 w-16 bg-muted/50 animate-pulse rounded-md"></div>
-                ))
-              ) : (
-                dynamicNavLinks.map((link) => {
-                  const isActive = pathname === link.href || (link.isShop && (pathname.startsWith('/shop') || pathname.startsWith('/product')));
-                  
-                  return (
-                    <div key={link.label} className='relative group py-6'>
-                      {link.isShop ? (
-                        <div className='flex items-center cursor-default'>
-                          <motion.span className={cn('text-[14px] xl:text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 group-hover:text-primary')}>
-                            {link.label}
-                            <ChevronDown className='h-4 w-4 mx-1 opacity-50 group-hover:rotate-180 transition-transform duration-300' />
-                          </motion.span>
-                        </div>
-                      ) : (
-                        <Link href={link.href} className='flex items-center'>
-                          <motion.span className={cn('text-[14px] xl:text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 hover:text-primary', link.special && 'text-primary')}>
-                            {link.label}
-                            {link.special && <Zap className='h-4 w-4 mx-1 fill-primary' />}
-                          </motion.span>
-                        </Link>
-                      )}
-                      
-                      {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-lg' />}
-                      
-                      {link.isShop && categories.length > 0 && (
-                        <div className={cn(
-                          'absolute top-full mt-0 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50',
-                          isRTL ? 'right-0' : 'left-0'
-                        )}>
-                          <div className='bg-background border border-border rounded-xl shadow-xl p-2.5 flex flex-col'>
-                            {categories.slice(0, 5).map((cat) => (
-                              <Link 
-                                key={cat._id} 
-                                href={`/shop?category=${cat.slug || cat._id}`} 
-                                className='px-4 py-2.5 text-[14px] font-medium rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors'
-                              >
-                                {cat.name}
-                              </Link>
-                            ))}
-                            <div className='h-px bg-border mx-2 my-1.5'></div>
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href || (link.isShop && (pathname.startsWith('/shop') || pathname.startsWith('/product')));
+                
+                return (
+                  <div key={link.label} className='relative group py-6'>
+                    {link.isShop ? (
+                      <div className='flex items-center cursor-default'>
+                        <span className={cn('text-[14px] xl:text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 group-hover:text-primary')}>
+                          {link.label}
+                          <ChevronDown className='h-4 w-4 mx-1 opacity-50 group-hover:rotate-180 transition-transform duration-300' />
+                        </span>
+                      </div>
+                    ) : (
+                      <Link href={link.href} className='flex items-center'>
+                        <span className={cn('text-[14px] xl:text-[15px] font-bold transition-colors flex items-center', isActive ? 'text-primary' : 'text-foreground/70 hover:text-primary', link.special && 'text-primary')}>
+                          {link.label}
+                          {link.special && <Zap className='h-4 w-4 mx-1 fill-primary' />}
+                        </span>
+                      </Link>
+                    )}
+                    
+                    {isActive && <motion.div layoutId='navbar-indicator' className='absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-lg' />}
+                    
+                    {link.isShop && categories.length > 0 && (
+                      <div className={cn(
+                        'absolute top-full mt-0 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50',
+                        isRTL ? 'right-0' : 'left-0'
+                      )}>
+                        <div className='bg-background border border-border rounded-xl shadow-xl p-2.5 flex flex-col'>
+                          {categories.slice(0, 5).map((cat) => (
                             <Link 
-                              href="/shop" 
-                              className='px-4 py-2.5 text-[14px] font-bold rounded-lg hover:bg-primary/5 text-primary transition-colors flex items-center justify-between group/btn'
+                              key={cat._id} 
+                              href={`/shop?category=${cat.slug || cat._id}`} 
+                              className='px-4 py-2.5 text-[14px] font-medium rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors'
                             >
-                              {language === 'ar' ? 'عرض كل المنتجات' : 'View All Products'}
-                              <ArrowRight className={cn("h-4 w-4 transition-transform group-hover/btn:translate-x-1", isRTL && "rotate-180 group-hover/btn:-translate-x-1")} />
+                              {cat.name}
                             </Link>
-                          </div>
+                          ))}
+                          <div className='h-px bg-border mx-2 my-1.5'></div>
+                          <Link 
+                            href="/shop" 
+                            className='px-4 py-2.5 text-[14px] font-bold rounded-lg hover:bg-primary/5 text-primary transition-colors flex items-center justify-between group/btn'
+                          >
+                            {language === 'ar' ? 'عرض كل المنتجات' : 'View All Products'}
+                            <ArrowRight className={cn("h-4 w-4 transition-transform group-hover/btn:translate-x-1", isRTL && "rotate-180 group-hover/btn:-translate-x-1")} />
+                          </Link>
                         </div>
-                      )}
-                    </div>
-                  )
-                })
-              )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </nav>
 
             <div className='flex flex-1 items-center justify-end gap-0.5 sm:gap-2 lg:gap-3'>
@@ -256,7 +227,6 @@ export function Navbar() {
                 </div>
               ) : (
                 <>
-                  {/* ✨ القائمة المنسدلة الموحدة (للزوار والمستخدمين) */}
                   <div className='hidden sm:block'>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -273,8 +243,6 @@ export function Navbar() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='end' sideOffset={8} className='w-60 z-[100] rounded-xl p-2'>
-                        
-                        {/* بيانات المستخدم لو مسجل دخول */}
                         {isAuthenticated ? (
                           <>
                             <DropdownMenuLabel className="font-bold">{user?.name}</DropdownMenuLabel>
@@ -285,7 +253,6 @@ export function Navbar() {
                             <DropdownMenuSeparator />
                           </>
                         ) : (
-                          // زرار الدخول لو زائر
                           <>
                             <DropdownMenuItem onClick={() => router.push('/login')} className="py-2.5 cursor-pointer font-bold text-primary bg-primary/5 rounded-lg mb-1">
                               <UserCircle className='mr-2 h-4 w-4' />
@@ -294,8 +261,6 @@ export function Navbar() {
                             <DropdownMenuSeparator />
                           </>
                         )}
-                        
-                        {/* ✨ ميزة الوضع الليلي بقت جوه القائمة لكل الناس */}
                         <div className="py-2 px-2 flex items-center justify-between mt-1 bg-muted/30 rounded-lg">
                           <div className="flex items-center text-sm font-medium text-foreground/80">
                             <MoonStar className="h-4 w-4 mr-2" />
@@ -303,8 +268,6 @@ export function Navbar() {
                           </div>
                           <ThemeToggle />
                         </div>
-
-                        {/* تسجيل الخروج */}
                         {isAuthenticated && (
                           <>
                             <DropdownMenuSeparator />
@@ -344,7 +307,7 @@ export function Navbar() {
         <NavSearch isMobile={true} isOpen={isMobileSearchOpen} setIsOpen={setIsMobileSearchOpen} language={language} t={t} isRTL={isRTL} />
       </header>
 
-      <MobileMenu isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} navLinks={dynamicNavLinks} user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={logout} language={language} t={t} isRTL={isRTL} storeName={storeName} />
+      <MobileMenu isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} navLinks={navLinks} user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={logout} language={language} t={t} isRTL={isRTL} storeName={storeName || t('brandName')} />
 
       {!isAdmin && isAuthenticated && <CartSheet open={isCartOpen} onOpenChange={setIsCartOpen} />}
     </>
