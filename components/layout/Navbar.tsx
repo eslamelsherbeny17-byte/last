@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap, Gift, BellRing, ChevronDown, ArrowRight } from 'lucide-react'
+import { Search, User, Heart, ShoppingCart, Menu, UserCircle, Package, Crown, LogOut, Sparkles, Tag, Zap, Gift, BellRing, ChevronDown, ArrowRight, MoonStar } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -27,7 +27,6 @@ export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   
-  // 1. استخراج حالات التحميل مفصولة
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth()
   const { itemsCount } = useCart()
   const { wishlist } = useWishlist()
@@ -38,7 +37,6 @@ export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   
-  // 2. حالة تحميل بيانات المتجر (تحدث مرة واحدة فقط)
   const [isNavLoading, setIsNavLoading] = useState(true)
   const [storeName, setStoreName] = useState('')
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
@@ -58,7 +56,6 @@ export function Navbar() {
     return () => clearInterval(timer)
   }, [announcements.length])
 
-  // الدالة دي هتشتغل مرة واحدة بس ومستحيل تعيد تحميل نفسها مع الفلترة
   useEffect(() => {
     const fetchDynamicData = async () => {
       try {
@@ -106,7 +103,7 @@ export function Navbar() {
       }
     }
     fetchDynamicData()
-  }, [language]) // مسحنا الـ t من هنا عشان الروابط متترسترش
+  }, [language])
 
   const handleScroll = useCallback(() => setIsScrolled(window.scrollY > 10), [])
   useEffect(() => {
@@ -167,7 +164,6 @@ export function Navbar() {
         <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
           <div className='container mx-auto px-2 sm:px-4 lg:px-8 flex h-14 sm:h-16 lg:h-20 items-center w-full'>
             
-            {/* 1. اللوجو (يعتمد على isNavLoading فقط) */}
             <div className='flex flex-1 items-center justify-start gap-1 sm:gap-3'>
               <div className='lg:hidden'>
                 <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-ml-1 sm:-ml-2 h-9 w-9 sm:h-10 sm:w-10'>
@@ -186,7 +182,6 @@ export function Navbar() {
               </Link>
             </div>
 
-            {/* 2. الروابط (تعتمد على isNavLoading فقط) */}
             <nav className='hidden lg:flex shrink-0 items-center justify-center gap-6 xl:gap-8'>
               {isNavLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
@@ -248,16 +243,12 @@ export function Navbar() {
               )}
             </nav>
 
-            {/* 3. الأدوات والأيقونات */}
             <div className='flex flex-1 items-center justify-end gap-0.5 sm:gap-2 lg:gap-3'>
-              {/* ✨ البحث والـ Theme مش بيحملوا أصلاً دول ثوابت */}
-              <div className='hidden lg:flex items-center'><ThemeToggle /></div>
               <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
               <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
                 <Search className='h-5 w-5 text-foreground/80' />
               </Button>
 
-              {/* ✨ الحساب والسلة هما بس اللي بيعتمدوا على authLoading لو بيتأكد من الحساب */}
               {authLoading ? (
                 <div className='flex items-center gap-1 sm:gap-2 ml-1'>
                   <div className="h-8 w-8 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
@@ -265,35 +256,63 @@ export function Navbar() {
                 </div>
               ) : (
                 <>
+                  {/* ✨ القائمة المنسدلة الموحدة (للزوار والمستخدمين) */}
                   <div className='hidden sm:block'>
-                    {isAuthenticated ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' size='icon' className='rounded-full h-10 w-10 hover:bg-muted'>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant='ghost' size='icon' className='rounded-full h-10 w-10 hover:bg-muted'>
+                          {isAuthenticated ? (
                             <Avatar className='h-8 w-8'>
                               <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>
                                 {getUserInitials(user?.name)}
                               </AvatarFallback>
                             </Avatar>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end' sideOffset={8} className='w-56 z-[100] rounded-xl'>
-                          <DropdownMenuLabel className="font-bold">{user?.name}</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => router.push('/profile')} className="py-2 cursor-pointer"><UserCircle className='mr-2 h-4 w-4' />{t('profile')}</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push('/profile/orders')} className="py-2 cursor-pointer"><Package className='mr-2 h-4 w-4' />{t('orders')}</DropdownMenuItem>
-                          {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className='text-primary py-2 cursor-pointer'><Crown className='mr-2 h-4 w-4' />{t('adminPanel')}</DropdownMenuItem>}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => logout()} className='text-red-500 py-2 cursor-pointer focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30'><LogOut className='mr-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <Link href='/login'>
-                        <Button variant='ghost' size='icon' className="h-10 w-10 rounded-full hover:bg-muted">
-                          <User className='h-5 w-5 text-foreground/80' />
+                          ) : (
+                            <User className='h-5 w-5 text-foreground/80' />
+                          )}
                         </Button>
-                      </Link>
-                    )}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align='end' sideOffset={8} className='w-60 z-[100] rounded-xl p-2'>
+                        
+                        {/* بيانات المستخدم لو مسجل دخول */}
+                        {isAuthenticated ? (
+                          <>
+                            <DropdownMenuLabel className="font-bold">{user?.name}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => router.push('/profile')} className="py-2.5 cursor-pointer"><UserCircle className='mr-2 h-4 w-4' />{t('profile')}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push('/profile/orders')} className="py-2.5 cursor-pointer"><Package className='mr-2 h-4 w-4' />{t('orders')}</DropdownMenuItem>
+                            {isAdmin && <DropdownMenuItem onClick={() => router.push('/admin')} className='text-primary py-2.5 cursor-pointer'><Crown className='mr-2 h-4 w-4' />{t('adminPanel')}</DropdownMenuItem>}
+                            <DropdownMenuSeparator />
+                          </>
+                        ) : (
+                          // زرار الدخول لو زائر
+                          <>
+                            <DropdownMenuItem onClick={() => router.push('/login')} className="py-2.5 cursor-pointer font-bold text-primary bg-primary/5 rounded-lg mb-1">
+                              <UserCircle className='mr-2 h-4 w-4' />
+                              {language === 'ar' ? 'تسجيل الدخول / إنشاء حساب' : 'Login / Register'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
+                        
+                        {/* ✨ ميزة الوضع الليلي بقت جوه القائمة لكل الناس */}
+                        <div className="py-2 px-2 flex items-center justify-between mt-1 bg-muted/30 rounded-lg">
+                          <div className="flex items-center text-sm font-medium text-foreground/80">
+                            <MoonStar className="h-4 w-4 mr-2" />
+                            {language === 'ar' ? 'المظهر' : 'Theme'}
+                          </div>
+                          <ThemeToggle />
+                        </div>
+
+                        {/* تسجيل الخروج */}
+                        {isAuthenticated && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => logout()} className='text-red-500 py-2.5 cursor-pointer focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30'><LogOut className='mr-2 h-4 w-4' />{t('logout')}</DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   {!isAdmin && (
