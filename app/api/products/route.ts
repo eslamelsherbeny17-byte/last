@@ -5,6 +5,7 @@ import Category from '@/lib/models/Category';
 import Brand from '@/lib/models/Brand';
 import { getTokenFromRequest, verifyToken } from '@/lib/middleware';
 import { uploadToCloudinary } from '@/lib/uploadToCloudinary';
+import mongoose from 'mongoose'; 
 
 
 
@@ -46,16 +47,41 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // 2. فلتر الأقسام
-    if (categories.length > 0 && categories[0] !== 'all' && categories[0] !== '') {
-      const catArray = categories[0].includes(',') ? categories[0].split(',') : categories;
-      query.category = { $in: catArray };
+    // 2. ✨ فلتر الأقسام (مضاد للأخطاء CastError)
+    let validCatIds: string[] = [];
+    categories.forEach(cat => {
+        if (!cat || cat === 'all') return;
+        const splitCats = cat.split(',');
+        splitCats.forEach(c => {
+            const cleanC = c.trim();
+            // نتأكد إن ده ID حقيقي مش كلمة عادية
+            if (cleanC && mongoose.Types.ObjectId.isValid(cleanC)) {
+                validCatIds.push(cleanC);
+            }
+        });
+    });
+
+    if (validCatIds.length > 0) {
+        query.category = { $in: validCatIds };
+    } else if (categories.length > 0 && categories.some(c => c && c !== 'all')) {
+        // لو العميل بعت اسم قسم مش ID، نرجع فاضي بدل ما نضرب Error يوقع الموقع
+        return NextResponse.json({ results: 0, paginationResult: { currentPage: page, limit, numberOfPages: 0 }, data: [] }, { status: 200 });
     }
 
-    // 3. فلتر الماركات
-    if (brands.length > 0 && brands[0] !== 'all' && brands[0] !== '') {
-      const brandArray = brands[0].includes(',') ? brands[0].split(',') : brands;
-      query.brand = { $in: brandArray };
+    // 3. ✨ فلتر الماركات (مضاد للأخطاء)
+    let validBrandIds: string[] = [];
+    brands.forEach(brand => {
+        if (!brand || brand === 'all') return;
+        const splitBrands = brand.split(',');
+        splitBrands.forEach(b => {
+            const cleanB = b.trim();
+            if (cleanB && mongoose.Types.ObjectId.isValid(cleanB)) {
+                validBrandIds.push(cleanB);
+            }
+        });
+    });
+    if (validBrandIds.length > 0) {
+        query.brand = { $in: validBrandIds };
     }
 
     // 4. فلتر السعر

@@ -46,14 +46,15 @@ function ShopContent() {
       const slugMap: {[key: string]: string} = {}
       if (data && Array.isArray(data)) {
         data.forEach((cat: Category) => {
-          slugMap[cat.slug] = cat._id
+          if (cat.slug) slugMap[cat.slug] = cat._id
+          // ✨ ضفنا الـ ID نفسه عشان لو الرابط مبعوت بـ ID مش Slug يشتغل
+          if (cat._id) slugMap[cat._id] = cat._id 
         })
       }
       setCategorySlugMap(slugMap)
     } catch (error) {
       console.error('Failed to fetch categories:', error)
     } finally {
-      // ✨ نؤكد أن الأقسام تم تحميلها سواء نجحت أو فشلت لتجنب تعليق الصفحة
       setIsCategoriesLoaded(true)
     }
   }
@@ -72,7 +73,6 @@ function ShopContent() {
     fetchBrands()
   }, [])
 
-  // Handle Filter Change
   const handleFilterChange = useCallback((filters: any) => {
     setActiveFilters(filters || {})
     setCurrentPage(1)
@@ -92,32 +92,36 @@ function ShopContent() {
       else if (sortBy === 'rating') params.sort = '-ratingsAverage';
       else if (sortBy === 'bestsellers') params.sort = '-sold';
 
-      // ✨ حماية قوية: تجاهل قيمة "all" لأنها بتدمر الـ Database Query
-      const selectedCategory = activeFilters.category;
-      if (selectedCategory && selectedCategory !== 'all' && selectedCategory.length > 0) {
-        params.category = selectedCategory;
-      } else if (categoryParam && categoryParam !== 'all') {
-        const categoryId = categorySlugMap[categoryParam]
-        params.category = categoryId ? categoryId : categoryParam
+      // ✨ تنظيف وحماية فلتر الأقسام
+      let finalCategoryIds: string[] = [];
+      if (activeFilters.category) {
+          const cats = Array.isArray(activeFilters.category) ? activeFilters.category : [activeFilters.category];
+          cats.forEach((c: string) => { if (c && c !== 'all') finalCategoryIds.push(c); });
       }
+      // الاعتماد على الرابط لو الفلتر الجانبي فاضي
+      if (finalCategoryIds.length === 0 && categoryParam && categoryParam !== 'all') {
+          const mappedId = categorySlugMap[categoryParam];
+          if (mappedId) finalCategoryIds.push(mappedId);
+          else finalCategoryIds.push(categoryParam); // Fallback
+      }
+      if (finalCategoryIds.length > 0) params.category = finalCategoryIds.join(',');
 
-      const selectedBrand = activeFilters.brand;
-      if (selectedBrand && selectedBrand !== 'all' && selectedBrand.length > 0) {
-        params.brand = selectedBrand;
+      // ✨ تنظيف وحماية فلتر الماركات
+      let finalBrandIds: string[] = [];
+      if (activeFilters.brand) {
+          const brandsFilter = Array.isArray(activeFilters.brand) ? activeFilters.brand : [activeFilters.brand];
+          brandsFilter.forEach((b: string) => { if (b && b !== 'all') finalBrandIds.push(b); });
       }
+      if (finalBrandIds.length > 0) params.brand = finalBrandIds.join(',');
 
       if (activeFilters.priceMin) params.priceMin = activeFilters.priceMin;
       if (activeFilters.priceMax) params.priceMax = activeFilters.priceMax;
 
-      if (saleParam === 'true' || activeFilters.sale) {
-        params.isDiscounted = 'true'; 
-      }
-
+      if (saleParam === 'true' || activeFilters.sale) params.isDiscounted = 'true'; 
       if (searchParam) params.keyword = searchParam;
 
       const response = await productsAPI.getAll(params);
       
-      // ✨ استخراج ذكي للمصفوفة زي ما عملنا في الناف بار بالضبط
       let productsArray: Product[] = [];
       if (response && Array.isArray(response.data)) {
           productsArray = response.data;
@@ -138,13 +142,11 @@ function ShopContent() {
   };
 
   useEffect(() => {
-    // ✨ لا نطلب المنتجات إلا بعد اكتمال تحميل خريطة الأقسام لتجنب الـ Race Condition
+    // ننتظر تحميل الأقسام فقط لو في قسم مطلوب في الرابط
     if (categoryParam) {
-      if (isCategoriesLoaded) {
-        fetchProducts()
-      }
+      if (isCategoriesLoaded) fetchProducts();
     } else {
-      fetchProducts()
+      fetchProducts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, sortBy, categoryParam, searchParam, saleParam, activeFilters, isCategoriesLoaded])
@@ -205,7 +207,6 @@ function ShopContent() {
               </div>
             </div>
 
-            {/* ✨ تصميم جديد لحالة "لا توجد منتجات" */}
             {loading ? (
               <div className='flex items-center justify-center py-12 md:py-20'>
                 <Loader2 className='h-10 w-10 md:h-12 md:w-12 animate-spin text-primary' />

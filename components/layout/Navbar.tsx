@@ -26,6 +26,8 @@ import { MobileMenu } from './MobileMenu'
 export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
+  
+  // 1. استخراج حالات التحميل مفصولة
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth()
   const { itemsCount } = useCart()
   const { wishlist } = useWishlist()
@@ -36,12 +38,11 @@ export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   
+  // 2. حالة تحميل بيانات المتجر (تحدث مرة واحدة فقط)
   const [isNavLoading, setIsNavLoading] = useState(true)
   const [storeName, setStoreName] = useState('')
-  
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
-  
   const [announcements, setAnnouncements] = useState<string[]>([])
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0)
 
@@ -57,6 +58,7 @@ export function Navbar() {
     return () => clearInterval(timer)
   }, [announcements.length])
 
+  // الدالة دي هتشتغل مرة واحدة بس ومستحيل تعيد تحميل نفسها مع الفلترة
   useEffect(() => {
     const fetchDynamicData = async () => {
       try {
@@ -81,7 +83,6 @@ export function Navbar() {
         
         setCategories(fetchedCategories)
 
-        // الروابط الأساسية الأربعة
         const baseLinks = [
           { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
           { href: '/shop', label: language === 'ar' ? 'المتجر' : 'Shop', isShop: true },
@@ -105,7 +106,7 @@ export function Navbar() {
       }
     }
     fetchDynamicData()
-  }, [language, t])
+  }, [language]) // مسحنا الـ t من هنا عشان الروابط متترسترش
 
   const handleScroll = useCallback(() => setIsScrolled(window.scrollY > 10), [])
   useEffect(() => {
@@ -138,13 +139,10 @@ export function Navbar() {
     else router.push(route)
   }
 
-  const isLoadingComplete = isNavLoading || authLoading
-
   return (
     <>
       <header className={cn('relative md:sticky top-0 z-50 w-full transition-all duration-300', isScrolled ? 'shadow-md' : 'shadow-sm')}>
         
-        {/* الشريط العلوي للإعلانات */}
         {announcements.length > 0 && announcements[0] !== '' && (
           <div className='relative overflow-hidden bg-gradient-to-r from-primary via-accent to-primary h-7 sm:h-8 flex items-center justify-center'>
             <AnimatePresence mode='wait'>
@@ -169,7 +167,7 @@ export function Navbar() {
         <div className={cn('transition-all duration-300 border-b', isScrolled ? 'bg-background/95 backdrop-blur-xl' : 'bg-background/80 backdrop-blur-md')}>
           <div className='container mx-auto px-2 sm:px-4 lg:px-8 flex h-14 sm:h-16 lg:h-20 items-center w-full'>
             
-            {/* 1. عمود اللوجو والموبايل */}
+            {/* 1. اللوجو (يعتمد على isNavLoading فقط) */}
             <div className='flex flex-1 items-center justify-start gap-1 sm:gap-3'>
               <div className='lg:hidden'>
                 <Button variant='ghost' size='icon' onClick={() => setIsMobileMenuOpen(true)} className='-ml-1 sm:-ml-2 h-9 w-9 sm:h-10 sm:w-10'>
@@ -178,7 +176,7 @@ export function Navbar() {
               </div>
 
               <Link href='/' className='flex-shrink-0'>
-                {isLoadingComplete ? (
+                {isNavLoading ? (
                   <div className="h-6 sm:h-8 w-20 sm:w-28 bg-muted/60 animate-pulse rounded-lg"></div>
                 ) : (
                   <span className='text-xl sm:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent'>
@@ -188,9 +186,9 @@ export function Navbar() {
               </Link>
             </div>
 
-            {/* 2. عمود الروابط */}
+            {/* 2. الروابط (تعتمد على isNavLoading فقط) */}
             <nav className='hidden lg:flex shrink-0 items-center justify-center gap-6 xl:gap-8'>
-              {isLoadingComplete ? (
+              {isNavLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="h-5 w-16 bg-muted/50 animate-pulse rounded-md"></div>
                 ))
@@ -238,7 +236,7 @@ export function Navbar() {
                               href="/shop" 
                               className='px-4 py-2.5 text-[14px] font-bold rounded-lg hover:bg-primary/5 text-primary transition-colors flex items-center justify-between group/btn'
                             >
-                              {language === 'ar' ? 'عرض كل المنتجات' : 'View All Categories'}
+                              {language === 'ar' ? 'عرض كل المنتجات' : 'View All Products'}
                               <ArrowRight className={cn("h-4 w-4 transition-transform group-hover/btn:translate-x-1", isRTL && "rotate-180 group-hover/btn:-translate-x-1")} />
                             </Link>
                           </div>
@@ -250,25 +248,23 @@ export function Navbar() {
               )}
             </nav>
 
-            {/* 3. عمود الأيقونات وأدوات المستخدم */}
+            {/* 3. الأدوات والأيقونات */}
             <div className='flex flex-1 items-center justify-end gap-0.5 sm:gap-2 lg:gap-3'>
-              {isLoadingComplete ? (
-                <div className='flex items-center gap-1 sm:gap-2'>
-                  <div className="hidden lg:block h-10 w-10 bg-muted/50 animate-pulse rounded-full"></div>
+              {/* ✨ البحث والـ Theme مش بيحملوا أصلاً دول ثوابت */}
+              <div className='hidden lg:flex items-center'><ThemeToggle /></div>
+              <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
+              <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
+                <Search className='h-5 w-5 text-foreground/80' />
+              </Button>
+
+              {/* ✨ الحساب والسلة هما بس اللي بيعتمدوا على authLoading لو بيتأكد من الحساب */}
+              {authLoading ? (
+                <div className='flex items-center gap-1 sm:gap-2 ml-1'>
                   <div className="h-8 w-8 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
                   <div className="h-8 w-8 sm:h-10 sm:w-10 bg-muted/50 animate-pulse rounded-full"></div>
                 </div>
               ) : (
                 <>
-                  <div className='hidden lg:flex items-center'><ThemeToggle /></div>
-
-                  {/* البحث */}
-                  <NavSearch isMobile={false} language={language} t={t} isRTL={isRTL} />
-                  <Button variant='ghost' size='icon' className='md:hidden h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted' onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}>
-                    <Search className='h-5 w-5 text-foreground/80' />
-                  </Button>
-
-                  {/* الحساب الشخصي */}
                   <div className='hidden sm:block'>
                     {isAuthenticated ? (
                       <DropdownMenu>
@@ -300,7 +296,6 @@ export function Navbar() {
                     )}
                   </div>
 
-                  {/* المفضلة والسلة */}
                   {!isAdmin && (
                     <div className="flex items-center gap-0.5 sm:gap-1">
                       <Button onClick={handleOpenProtected('/wishlist')} variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted'>
