@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { ThemeToggle } from '@/components/ThemeToggle' // ✨ استدعاء مكون المظهر
 
 import { cn } from '@/lib/utils'
 
@@ -95,7 +96,16 @@ export function MobileMenu({ isOpen, setIsOpen, navLinks, user, isAuthenticated,
 
         <div className='p-4 border-t bg-muted/30 space-y-2.5 flex-shrink-0'>
           <p className='text-xs font-semibold text-muted-foreground px-3'>{language === 'ar' ? 'الإعدادات' : 'Settings'}</p>
-          <div className='flex items-center justify-between px-4 py-2 bg-background rounded-xl'><div className='flex items-center gap-2'><Settings className='h-4 w-4 text-muted-foreground' /><span className='text-sm font-semibold'>{language === 'ar' ? 'المظهر' : 'Theme'}</span></div></div>
+          
+          {/* ✨ التعديل هنا: وضعنا مكون ThemeToggle */}
+          <div className='flex items-center justify-between px-4 py-2 bg-background rounded-xl'>
+            <div className='flex items-center gap-2'>
+              <Settings className='h-4 w-4 text-muted-foreground' />
+              <span className='text-sm font-semibold'>{language === 'ar' ? 'المظهر' : 'Theme'}</span>
+            </div>
+            <ThemeToggle />
+          </div>
+
           {isAuthenticated ? (
             <Button variant='outline' className='w-full text-red-600 border-red-200 hover:bg-red-50 font-semibold h-11' onClick={() => { logout(); setIsOpen(false); }}><LogOut className='h-4 w-4 mr-2' />{t('logout')}</Button>
           ) : (
